@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.scatl.widget">
+    package="com.novashen.widget">
 
     <application>
 
         <activity
-            android:name="com.scatl.widget.download.DownloadActivity"
+            android:name="com.novashen.widget.download.DownloadActivity"
             android:theme="@style/CsuTransparentActivity"/>
 
         <activity
-            android:name="com.scatl.widget.gallery.GalleryActivity"
+            android:name="com.novashen.widget.gallery.GalleryActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"/>
 
         <activity
-            android:name="com.scatl.widget.iamgeviewer.ImagePreviewActivity"
+            android:name="com.novashen.widget.iamgeviewer.ImagePreviewActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:theme="@style/Transparent"/>
 
         <activity
-            android:name="com.scatl.widget.video.VideoPreviewActivity"
+            android:name="com.novashen.widget.video.VideoPreviewActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"/>
 
         <service
-            android:name="com.scatl.widget.download.DownloadService"
+            android:name="com.novashen.widget.download.DownloadService"
             android:enabled="true"
             android:exported="false" />
 
         <service
-            android:name="com.scatl.widget.audioplay.AudioPlayService"
+            android:name="com.novashen.widget.audioplay.AudioPlayService"
             android:enabled="true"
             android:exported="false" />
 
         <receiver
-            android:name="com.scatl.widget.audioplay.AudioPlayReceiver"
+            android:name="com.novashen.widget.audioplay.AudioPlayReceiver"
             android:enabled="true"
             android:exported="false"/>
 
         <provider
-            android:name=".download.DownloadFileProvider"
-            android:authorities="com.scatl.widget.download.downloadFileProvider"
+            android:name="com.novashen.widget.download.DownloadFileProvider"
+            android:authorities="com.novashen.widget.download.downloadFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

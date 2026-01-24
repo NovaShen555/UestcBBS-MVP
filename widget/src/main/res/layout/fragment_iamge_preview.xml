@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.scatl.widget.iamgeviewer.dragview.DragPhotoView
+    <com.novashen.widget.iamgeviewer.dragview.DragPhotoView
         android:id="@+id/photo_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
         android:transitionName="@string/image_preview_transition_name"/>
 
-    <com.scatl.widget.iamgeviewer.dragview.DragSubsamplingScaleImageView
+    <com.novashen.widget.iamgeviewer.dragview.DragSubsamplingScaleImageView
         android:id="@+id/long_image_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

@@ -61,7 +61,7 @@
 
                 </RelativeLayout>
 
-                <com.scatl.uestcbbs.widget.textview.EmojiEditText
+                <com.novashen.riverside.widget.textview.EmojiEditText
                     android:id="@+id/edittext"
                     android:layout_width="match_parent"
                     android:layout_height="100dp"
@@ -199,7 +199,7 @@
                     android:alpha="0.1"
                     android:background="?attr/colorOutline"/>
 
-                <com.scatl.widget.emotion.EmotionPanelLayout
+                <com.novashen.widget.emotion.EmotionPanelLayout
                     android:id="@+id/emotion_layout"
                     android:layout_width="match_parent"
                     android:layout_height="250dp"

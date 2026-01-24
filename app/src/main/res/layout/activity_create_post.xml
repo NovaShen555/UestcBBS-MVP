@@ -132,7 +132,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <com.scatl.uestcbbs.widget.ContentEditor
+                    <com.novashen.riverside.widget.ContentEditor
                         android:id="@+id/create_post_content_editor"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -394,7 +394,7 @@
 
                 </RelativeLayout>
 
-                <com.scatl.widget.emotion.EmotionPanelLayout
+                <com.novashen.widget.emotion.EmotionPanelLayout
                     android:id="@id/create_post_emoticon_layout"
                     android:layout_width="match_parent"
                     android:layout_height="250dp"

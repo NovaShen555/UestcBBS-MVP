@@ -1,0 +1,94 @@
+package com.novashen.riverside.module.credit.view
+
+import android.os.Bundle
+import android.view.animation.AnimationUtils
+import com.novashen.riverside.R
+import com.novashen.riverside.annotation.ToastType
+import com.novashen.riverside.base.BaseEvent
+import com.novashen.riverside.base.BaseVBFragment
+import com.novashen.riverside.databinding.FragmentWaterTaskDoingBinding
+import com.novashen.riverside.entity.TaskBean
+import com.novashen.riverside.module.credit.adapter.WaterTaskAdapter
+import com.novashen.riverside.module.credit.presenter.WaterTaskFailedPresenter
+import com.novashen.riverside.util.showToast
+import com.scwang.smart.refresh.layout.api.RefreshLayout
+import org.greenrobot.eventbus.EventBus
+
+/**
+ * created by sca_tl at 2023/4/7 20:32
+ */
+class WaterTaskFailedFragment: BaseVBFragment<WaterTaskFailedPresenter, WaterTaskFailView, FragmentWaterTaskDoingBinding>(), WaterTaskFailView {
+
+    private lateinit var mAdapter: WaterTaskAdapter
+
+    companion object {
+        fun getInstance(bundle: Bundle?) = WaterTaskFailedFragment().apply { arguments = bundle }
+    }
+
+    override fun getBundle(bundle: Bundle?) {
+
+    }
+
+    override fun getViewBinding() = FragmentWaterTaskDoingBinding.inflate(layoutInflater)
+
+    override fun initPresenter() = WaterTaskFailedPresenter()
+
+    override fun initView() {
+        super.initView()
+        mAdapter = WaterTaskAdapter(R.layout.item_water_task_doing)
+        mBinding.recyclerView.apply {
+            adapter = mAdapter
+            layoutAnimation = AnimationUtils.loadLayoutAnimation(context, R.anim.layout_animation_from_top)
+        }
+
+        mBinding.statusView.loading()
+    }
+
+    override fun lazyLoad() {
+        mPresenter?.getDoneTaskList()
+    }
+
+    override fun onRefresh(refreshLayout: RefreshLayout) {
+        mPresenter?.getDoneTaskList()
+    }
+
+    override fun setOnItemClickListener() {
+        mAdapter.setOnItemChildClickListener { adapter, view, position ->
+            when(view.id) {
+                R.id.apply_task -> {
+                    mPresenter?.applyNewTask(mAdapter.data[position].id, position)
+                }
+            }
+        }
+    }
+
+    override fun onGetFailedTaskSuccess(taskBeans: List<TaskBean>, formhash: String?) {
+        mBinding.statusView.success()
+        mBinding.refreshLayout.finishRefresh()
+        mBinding.refreshLayout.finishLoadMoreWithNoMoreData()
+
+        if (taskBeans.isEmpty()) {
+            mBinding.statusView.error("啊哦，还没有失败的任务~")
+        } else {
+            mAdapter.setNewData(taskBeans)
+            mBinding.recyclerView.scheduleLayoutAnimation()
+        }
+    }
+
+    override fun onGetFailedTaskError(msg: String?) {
+        mBinding.refreshLayout.finishRefresh()
+        mBinding.refreshLayout.finishLoadMore()
+        mBinding.statusView.error(msg)
+    }
+
+    override fun onApplyNewTaskSuccess(msg: String?, taskId: Int, position: Int) {
+        mAdapter.data.removeAt(position)
+        mAdapter.notifyItemRemoved(position)
+        showToast(msg, ToastType.TYPE_SUCCESS)
+        EventBus.getDefault().post(BaseEvent<Any>(BaseEvent.EventCode.APPLY_NEW_TASK_SUCCESS))
+    }
+
+    override fun onApplyNewTaskError(msg: String?) {
+        showToast(msg, ToastType.TYPE_ERROR)
+    }
+}

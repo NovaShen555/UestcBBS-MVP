@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.scatl.uestcbbs">
+    package="com.novashen.riverside">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -19,7 +19,7 @@
         tools:ignore="ProtectedPermissions" />
 
     <application
-        android:name=".App"
+        android:name="com.novashen.riverside.App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -31,97 +31,97 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".module.collection.view.CollectionDetailActivity"
+            android:name="com.novashen.riverside.module.collection.view.CollectionDetailActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
         <activity
-            android:name=".module.credit.view.CreditHistoryActivity"
+            android:name="com.novashen.riverside.module.credit.view.CreditHistoryActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
         <activity
-            android:name=".module.post.view.NewPostDetailActivity"
+            android:name="com.novashen.riverside.module.post.view.NewPostDetailActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
         <activity
-            android:name=".module.post.PostDetailActivity"
+            android:name="com.novashen.riverside.module.post.PostDetailActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
         <activity
-            android:name=".module.darkroom.view.DarkRoomActivity"
+            android:name="com.novashen.riverside.module.darkroom.view.DarkRoomActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.user.view.ModifyAvatarActivity"
+            android:name="com.novashen.riverside.module.user.view.ModifyAvatarActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.user.view.BlackListActivity"
+            android:name="com.novashen.riverside.module.user.view.BlackListActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.magic.view.MineMagicActivity"
+            android:name="com.novashen.riverside.module.magic.view.MineMagicActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.magic.view.MagicShopActivity"
+            android:name="com.novashen.riverside.module.magic.view.MagicShopActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.houqin.view.HouQinReportListActivity"
+            android:name="com.novashen.riverside.module.houqin.view.HouQinReportListActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.medal.view.MedalCenterActivity"
+            android:name="com.novashen.riverside.module.medal.view.MedalCenterActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.dayquestion.view.DayQuestionActivity"
+            android:name="com.novashen.riverside.module.dayquestion.view.DayQuestionActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.history.view.HistoryActivity"
+            android:name="com.novashen.riverside.module.history.view.HistoryActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.post.view.PostDraftActivity"
+            android:name="com.novashen.riverside.module.post.view.PostDraftActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.post.view.CreatePostActivity"
+            android:name="com.novashen.riverside.module.post.view.CreatePostActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity
-            android:name=".module.user.view.AtUserListActivity"
+            android:name="com.novashen.riverside.module.user.view.AtUserListActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.search.view.SearchActivity"
+            android:name="com.novashen.riverside.module.search.view.SearchActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.account.view.AccountManageActivity"
+            android:name="com.novashen.riverside.module.account.view.AccountManageActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.message.view.PrivateChatActivity"
+            android:name="com.novashen.riverside.module.message.view.PrivateChatActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.webview.view.WebViewActivity"
+            android:name="com.novashen.riverside.module.webview.view.WebViewActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.setting.view.OpenSourceActivity"
+            android:name="com.novashen.riverside.module.setting.view.OpenSourceActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.setting.view.AboutActivity"
+            android:name="com.novashen.riverside.module.setting.view.AboutActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.setting.view.SettingsActivity"
+            android:name="com.novashen.riverside.module.setting.view.SettingsActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.post.view.CreateCommentActivity"
+            android:name="com.novashen.riverside.module.post.view.CreateCommentActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:theme="@style/CsuTransparentActivity"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity
-            android:name=".module.user.view.UserDetailActivity"
+            android:name="com.novashen.riverside.module.user.view.UserDetailActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.board.view.BoardActivity"
+            android:name="com.novashen.riverside.module.board.view.BoardActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
-            android:name=".module.post.view.CreatePostEntranceActivity"
+            android:name="com.novashen.riverside.module.post.view.CreatePostEntranceActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:theme="@style/TransparentActivity"
             android:windowSoftInputMode="stateVisible|adjustResize" />
         <activity
-            android:name=".module.main.view.MainActivity"
+            android:name="com.novashen.riverside.module.main.view.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="true"
             android:launchMode="standard">
@@ -138,26 +138,26 @@
         </activity>
 
         <receiver
-            android:name=".receivers.RetryDayQuestionReceiver"
+            android:name="com.novashen.riverside.receivers.RetryDayQuestionReceiver"
             android:exported="false" />
 
         <service
-            android:name=".services.HeartMsgService"
+            android:name="com.novashen.riverside.services.HeartMsgService"
             android:enabled="true"
             android:exported="false" />
         <service
-            android:name=".services.HeartMsgGuardService"
+            android:name="com.novashen.riverside.services.HeartMsgGuardService"
             android:enabled="true"
             android:exported="false"
             android:process=":HeartMsgGuard" />
         <service
-            android:name=".services.DayQuestionService"
+            android:name="com.novashen.riverside.services.DayQuestionService"
             android:enabled="true"
             android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.scatl.uestcbbs.fileprovider"
+            android:authorities="com.novashen.riverside.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

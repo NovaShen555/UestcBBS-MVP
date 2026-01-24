@@ -6,15 +6,15 @@
     <version value="10"/>
 
     <list>
-        <mapping class="com.scatl.uestcbbs.entity.AccountBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.PostDraftBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.ReplyDraftBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.HistoryBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.BlackListBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.DownloadFileBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.SupportedBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.SelectBoardFavoriteBean"/>
-        <mapping class="com.scatl.uestcbbs.entity.PrivateChatDraftBean"/>
+        <mapping class="com.novashen.riverside.entity.AccountBean"/>
+        <mapping class="com.novashen.riverside.entity.PostDraftBean"/>
+        <mapping class="com.novashen.riverside.entity.ReplyDraftBean"/>
+        <mapping class="com.novashen.riverside.entity.HistoryBean"/>
+        <mapping class="com.novashen.riverside.entity.BlackListBean"/>
+        <mapping class="com.novashen.riverside.entity.DownloadFileBean"/>
+        <mapping class="com.novashen.riverside.entity.SupportedBean"/>
+        <mapping class="com.novashen.riverside.entity.SelectBoardFavoriteBean"/>
+        <mapping class="com.novashen.riverside.entity.PrivateChatDraftBean"/>
     </list>
 
 </litepal>

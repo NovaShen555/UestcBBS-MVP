@@ -25,7 +25,7 @@
             android:textSize="15dp"
             android:layout_marginStart="5dp"/>
 
-        <com.scatl.widget.NestedScrollableHost
+        <com.novashen.widget.NestedScrollableHost
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -45,7 +45,7 @@
 
             </HorizontalScrollView>
 
-        </com.scatl.widget.NestedScrollableHost>
+        </com.novashen.widget.NestedScrollableHost>
 
     </LinearLayout>
 

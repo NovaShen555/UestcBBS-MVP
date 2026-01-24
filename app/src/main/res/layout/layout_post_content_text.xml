@@ -32,7 +32,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <com.scatl.uestcbbs.widget.textview.EmojiTextView
+    <com.novashen.riverside.widget.textview.EmojiTextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -30,7 +30,7 @@
         app:layout_constraintTop_toBottomOf="@id/app_bar"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <com.scatl.widget.StatusView
+    <com.novashen.widget.StatusView
         android:id="@+id/status_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

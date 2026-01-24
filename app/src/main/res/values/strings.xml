@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">清水河畔</string>
+    <string name="app_name">RiverSide</string>
 
     <!---->
     <string name="user_name">用户名</string>
@@ -17,7 +17,7 @@
     <string name="new_post">最新发布</string>
 
     <!--    title-->
-    <string name="home_page_title">清水河畔</string>
+    <string name="home_page_title">RiverSide</string>
     <string name="forum_list_title">板块列表</string>
     <string name="notification_title">消息通知</string>
     <string name="mine_title">我的</string>

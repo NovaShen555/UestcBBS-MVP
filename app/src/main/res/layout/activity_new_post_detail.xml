@@ -36,7 +36,7 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <com.scatl.widget.SmoothNestedScrollLayout
+    <com.novashen.widget.SmoothNestedScrollLayout
         android:id="@+id/scroll_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -359,7 +359,7 @@
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <com.scatl.widget.VoteView
+                <com.novashen.widget.VoteView
                     android:id="@+id/vote_view"
                     android:layout_width="0dp"
                     android:layout_height="15dp"
@@ -497,7 +497,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    </com.scatl.widget.SmoothNestedScrollLayout>
+    </com.novashen.widget.SmoothNestedScrollLayout>
 
     <com.lihang.ShadowLayout
         android:id="@+id/bottom_layout"
@@ -633,7 +633,7 @@
 
     </com.lihang.ShadowLayout>
 
-    <com.scatl.widget.StatusView
+    <com.novashen.widget.StatusView
         android:id="@+id/status_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -8,7 +8,7 @@
     android:id="@+id/root_layout"
     android:background="?attr/colorOnSurfaceInverse">
 
-    <com.scatl.widget.NestedScrollableHost
+    <com.novashen.widget.NestedScrollableHost
         android:id="@+id/chip_group_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -86,7 +86,7 @@
 
         </HorizontalScrollView>
 
-    </com.scatl.widget.NestedScrollableHost>
+    </com.novashen.widget.NestedScrollableHost>
 
     <com.scwang.smart.refresh.layout.SmartRefreshLayout
         android:id="@+id/refresh_layout"
@@ -103,7 +103,7 @@
 
     </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 
-    <com.scatl.widget.StatusView
+    <com.novashen.widget.StatusView
         android:id="@id/status_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

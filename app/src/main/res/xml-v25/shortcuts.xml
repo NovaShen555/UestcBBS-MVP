@@ -12,8 +12,8 @@
 
         <intent
             android:action="message"
-            android:targetPackage="com.scatl.uestcbbs"
-            android:targetClass="com.scatl.uestcbbs.module.main.view.MainActivity" />
+            android:targetPackage="com.novashen.riverside"
+            android:targetClass="com.novashen.riverside.module.main.view.MainActivity" />
         <categories android:name="android.shortcut.conversation"/>
     </shortcut>
 
@@ -27,8 +27,8 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.scatl.uestcbbs"
-            android:targetClass="com.scatl.uestcbbs.module.post.view.CreatePostActivity" />
+            android:targetPackage="com.novashen.riverside"
+            android:targetClass="com.novashen.riverside.module.post.view.CreatePostActivity" />
         <categories android:name="android.shortcut.conversation"/>
     </shortcut>
 
@@ -42,8 +42,8 @@
 
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.scatl.uestcbbs"
-            android:targetClass="com.scatl.uestcbbs.module.search.view.SearchActivity" />
+            android:targetPackage="com.novashen.riverside"
+            android:targetClass="com.novashen.riverside.module.search.view.SearchActivity" />
         <categories android:name="android.shortcut.conversation"/>
     </shortcut>
 
@@ -57,8 +57,8 @@
 
         <intent
             android:action="hot_post"
-            android:targetPackage="com.scatl.uestcbbs"
-            android:targetClass="com.scatl.uestcbbs.module.main.view.MainActivity" />
+            android:targetPackage="com.novashen.riverside"
+            android:targetClass="com.novashen.riverside.module.main.view.MainActivity" />
         <categories android:name="android.shortcut.conversation"/>
     </shortcut>
 
