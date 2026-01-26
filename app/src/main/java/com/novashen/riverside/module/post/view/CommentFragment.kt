@@ -191,12 +191,56 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
                 }
             }
             v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            page = 1
-            mBinding.statusView.loading()
-            commentAdapter.setNewData(ArrayList())
-            // 不再请求 API，排序功能暂时禁用（需要在本地对已有数据排序）
-            EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.COMMENT_SORT_CHANGE, currentSort))
+
+            // 对已有数据进行本地排序
+            applySortToCurrentData()
         }
+    }
+
+    /**
+     * 对当前已加载的评论数据应用排序
+     */
+    private fun applySortToCurrentData() {
+        if (totalCommentData.isEmpty()) {
+            return
+        }
+
+        mBinding.statusView.loading()
+
+        when (currentSort) {
+            SORT.DEFAULT -> {
+                // 默认排序：按楼层号正序
+                val sortedData = totalCommentData.sortedBy { it.position }
+                commentAdapter.setNewData(ArrayList(sortedData))
+            }
+            SORT.NEW -> {
+                // 最新排序：按时间倒序
+                val sortedData = totalCommentData.sortedByDescending {
+                    it.posts_date.toLongOrNull() ?: 0L
+                }
+                commentAdapter.setNewData(ArrayList(sortedData))
+            }
+            SORT.AUTHOR -> {
+                // 只看楼主：筛选楼主的评论
+                val authorComments = totalCommentData.filter { it.reply_id == topicAuthorId }
+                if (authorComments.isEmpty()) {
+                    commentAdapter.setNewData(ArrayList())  // 清空列表
+                    mBinding.statusView.error("楼主暂无评论")
+                } else {
+                    commentAdapter.setNewData(ArrayList(authorComments))
+                    mBinding.statusView.success()
+                }
+                return
+            }
+            SORT.FLOOR -> {
+                // 楼中楼排序（暂时使用默认排序）
+                val sortedData = totalCommentData.sortedBy { it.position }
+                commentAdapter.setNewData(ArrayList(sortedData))
+            }
+        }
+
+        mBinding.statusView.success()
+        mBinding.recyclerView.scrollToPosition(0)
     }
 
     override fun onLoadMore(refreshLayout: RefreshLayout) {

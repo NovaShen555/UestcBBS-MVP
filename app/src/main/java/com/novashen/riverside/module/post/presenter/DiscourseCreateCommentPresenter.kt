@@ -46,11 +46,15 @@ class DiscourseCreateCommentPresenter : BaseVBPresenter<CreateCommentView>() {
             return
         }
 
+        // 转换表情格式：将 [字母:数字] 转换为 :字母数字:
+        // 例如: [a:1168] -> :a1168:, [s:123] -> :s123:
+        val convertedContent = convertEmojiFormat(content)
+
         // 如果是引用回复，传入楼层号；否则传 null
         val replyToPostNumber = if (isQuote && quoteId > 0) quoteId else null
 
         discoursePostModel.createPost(
-            content,
+            convertedContent,
             topicId,
             boardId,
             replyToPostNumber,
@@ -104,5 +108,20 @@ class DiscourseCreateCommentPresenter : BaseVBPresenter<CreateCommentView>() {
     // 权限请求（保留原有逻辑）
     fun requestPermission(activity: Any?, action: Int, vararg permissions: String?) {
         // 暂不实现
+    }
+
+    /**
+     * 转换表情格式
+     * 将 [字母:数字] 格式转换为 :字母数字: 格式（Discourse 标准表情格式）
+     * 特殊处理：将字母 'a' 转换为 's'
+     * 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+     */
+    private fun convertEmojiFormat(text: String): String {
+        return text.replace(Regex("\\[([a-zA-Z]+):(\\d+)\\]")) { matchResult ->
+            val letter = matchResult.groupValues[1]
+            val number = matchResult.groupValues[2]
+            val convertedLetter = if (letter == "a") "s" else letter
+            ":$convertedLetter$number:"
+        }
     }
 }

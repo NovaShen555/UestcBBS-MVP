@@ -3,7 +3,7 @@
  */
 object BuildVersion {
     const val applicationId     =       "com.novashen.riverside"
-    const val versionCode       =       101
+    const val versionCode       =       10001  // 1.0.1 -> 1*10000 + 0*100 + 1 = 10001
     const val versionName       =       "1.0.1"
     const val buildToolsVersion =       "32.0.0"
     const val compileSdk        =       32

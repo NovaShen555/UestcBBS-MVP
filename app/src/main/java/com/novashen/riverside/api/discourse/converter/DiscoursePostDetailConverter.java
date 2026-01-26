@@ -243,8 +243,9 @@ public class DiscoursePostDetailConverter {
             if (contentList.isEmpty()) {
                 PostDetailBean.TopicBean.ContentBean content = new PostDetailBean.TopicBean.ContentBean();
                 content.type = 0;
-                content.infor = doc.text();
-                content.originalInfo = content.infor;
+                String text = doc.text();
+                content.infor = text;
+                content.originalInfo = text;
                 contentList.add(content);
             }
 
@@ -253,8 +254,9 @@ public class DiscoursePostDetailConverter {
             // 解析失败时，返回纯文本
             PostDetailBean.TopicBean.ContentBean content = new PostDetailBean.TopicBean.ContentBean();
             content.type = 0;
-            content.infor = Jsoup.parse(html).text();
-            content.originalInfo = content.infor;
+            String text = Jsoup.parse(html).text();
+            content.infor = text;
+            content.originalInfo = text;
             contentList.add(content);
         }
 
@@ -325,8 +327,9 @@ public class DiscoursePostDetailConverter {
             // 解析失败时，返回纯文本
             PostDetailBean.ListBean.ReplyContentBean content = new PostDetailBean.ListBean.ReplyContentBean();
             content.type = 0;
-            content.infor = Jsoup.parse(html).text();
-            content.originalInfo = content.infor;
+            String text = Jsoup.parse(html).text();
+            content.infor = text;
+            content.originalInfo = text;
             contentList.add(content);
         }
 

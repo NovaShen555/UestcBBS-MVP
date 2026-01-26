@@ -57,7 +57,11 @@ class DiscoursePostDetailPresenter : NewPostDetailPresenter() {
      * @param replyToPostNumber 回复的楼层号（可选）
      */
     fun sendComment(content: String, topicId: Int, replyToPostNumber: Int?) {
-        discoursePostModel.createPost(content, topicId, currentCategoryId, replyToPostNumber,
+        // 转换表情格式：将 [字母:数字] 转换为 :字母数字:
+        // 例如: [a:1168] -> :a1168:, [s:123] -> :s123:
+        val convertedContent = convertEmojiFormat(content)
+
+        discoursePostModel.createPost(convertedContent, topicId, currentCategoryId, replyToPostNumber,
             object : Observer<CreatePostResponse>() {
                 override fun OnSuccess(response: CreatePostResponse) {
                     if (response.success) {
@@ -79,5 +83,20 @@ class DiscoursePostDetailPresenter : NewPostDetailPresenter() {
                     mCompositeDisposable?.add(d)
                 }
             })
+    }
+
+    /**
+     * 转换表情格式
+     * 将 [字母:数字] 格式转换为 :字母数字: 格式（Discourse 标准表情格式）
+     * 特殊处理：将字母 'a' 转换为 's'
+     * 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+     */
+    private fun convertEmojiFormat(text: String): String {
+        return text.replace(Regex("\\[([a-zA-Z]+):(\\d+)\\]")) { matchResult ->
+            val letter = matchResult.groupValues[1]
+            val number = matchResult.groupValues[2]
+            val convertedLetter = if (letter == "a") "s" else letter
+            ":$convertedLetter$number:"
+        }
     }
 }
