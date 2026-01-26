@@ -419,10 +419,7 @@ public class DiscourseLoginTest {
                         if (response.isSuccessful() && response.body() != null) {
                             CreatePostResponse postResponse = response.body();
                             System.out.println("✓ 评论发表成功！");
-                            System.out.println("  评论ID: " + postResponse.getId());
-                            System.out.println("  帖子ID: " + postResponse.getTopicId());
-                            System.out.println("  楼层号: " + postResponse.getPostNumber());
-                            System.out.println("  评论内容: " + postResponse.getRaw());
+                            System.out.println("  评论ID: " + postResponse);
 
                             testSuccess[0] = true;
                         } else {

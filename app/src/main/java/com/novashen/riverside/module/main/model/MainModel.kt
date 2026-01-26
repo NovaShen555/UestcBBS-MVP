@@ -48,12 +48,18 @@ class MainModel {
         // 查找 APK 文件
         val apkAsset = release.assets?.find { it.name.endsWith(".apk") }
         if (apkAsset != null) {
-            updateInfo.apkUrl = apkAsset.browserDownloadUrl
+            // 使用 GitHub 代理加速下载（国内网络环境）
+            val proxyPrefix = "https://gh-proxy.org/"
+            updateInfo.apkUrl = proxyPrefix + apkAsset.browserDownloadUrl
             updateInfo.apkName = apkAsset.name
             updateInfo.apkSize = formatFileSize(apkAsset.size)
+            // 浏览器下载也使用代理加速的直接下载链接
+            updateInfo.webDownloadUrl = proxyPrefix + apkAsset.browserDownloadUrl
+        } else {
+            // 如果没有 APK 文件，使用 Release 页面
+            updateInfo.webDownloadUrl = release.htmlUrl
         }
 
-        updateInfo.webDownloadUrl = release.htmlUrl
         updateInfo.apkMD5 = ""
         updateInfo.id = 0
         updateInfo.apkImages = emptyList()
