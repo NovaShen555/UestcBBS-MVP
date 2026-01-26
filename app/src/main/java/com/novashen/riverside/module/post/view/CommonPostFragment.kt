@@ -44,7 +44,42 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
 
     override fun getViewBinding() = FragmentCommonPostBinding.inflate(layoutInflater)
 
-    override fun initPresenter() = CommonPostPresenter()
+    override fun initPresenter(): CommonPostPresenter {
+        // 如果是最新回复类型，使用 Discourse Presenter
+        return if (mType == TYPE_NEW_REPLY_POST) {
+            DiscourseCommonPostPresenter(this)
+        } else {
+            CommonPostPresenter()
+        }
+    }
+
+    // Discourse 帖子 Presenter，用于最新回复
+    private class DiscourseCommonPostPresenter(
+        private val fragment: CommonPostFragment
+    ) : CommonPostPresenter() {
+        private val discoursePresenter = com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter()
+
+        init {
+            discoursePresenter.attachView(object : com.novashen.riverside.module.home.view.LatestPostView {
+                override fun getSimplePostDataSuccess(simplePostListBean: CommonPostBean) {
+                    fragment.onGetPostSuccess(simplePostListBean)
+                }
+
+                override fun getSimplePostDataError(msg: String?) {
+                    fragment.onGetPostError(msg)
+                }
+
+                override fun getBannerDataSuccess(bingPicBean: com.novashen.riverside.entity.BingPicBean?) {}
+                override fun onGetNoticeSuccess(noticeBean: com.novashen.riverside.entity.NoticeBean?) {}
+                override fun onGetNoticeError(msg: String?) {}
+                override fun onGetHomePageSuccess(msg: String?) {}
+            })
+        }
+
+        fun getLatestTopics() {
+            discoursePresenter.getLatestTopics()
+        }
+    }
 
     override fun getBundle(bundle: Bundle?) {
         mType = bundle?.getString(Constant.IntentKey.TYPE, TYPE_BOARD_POST)?: TYPE_BOARD_POST
@@ -84,7 +119,21 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
                 mPresenter?.getHomeTopicList(mPage, SharePrefUtil.getPageSize(context), "essence")
             }
             TYPE_NEW_REPLY_POST -> {
-                mPresenter?.getHomeTopicList(mPage, SharePrefUtil.getPageSize(context), "all")
+                // 使用 Discourse API 获取最新回复
+                if (mPresenter is CommonPostPresenter && mPage == 1) {
+                    try {
+                        val method = mPresenter!!.javaClass.getDeclaredMethod("getLatestTopics")
+                        method.invoke(mPresenter)
+                    } catch (e: Exception) {
+                        // 如果反射失败，使用原有 API
+                        mPresenter?.getHomeTopicList(mPage, SharePrefUtil.getPageSize(context), "all")
+                    }
+                } else {
+                    // 分页暂不支持，显示提示
+                    mBinding.refreshLayout.finishLoadMore()
+                    showToast("已加载全部内容", ToastType.TYPE_NORMAL)
+                    mNoMoreData = true
+                }
             }
         }
     }

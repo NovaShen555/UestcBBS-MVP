@@ -154,7 +154,8 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
 
     @Override
     protected BasePresenter initPresenter() {
-        return new LatestPostPresenter();
+        // 使用 Discourse API
+        return new com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter();
     }
 
     /**
@@ -218,12 +219,20 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
                 mLatestPostPresenter.getHomePage();
                 mLatestPostPresenter.getBannerData();
                 mLatestPostPresenter.getNotice();
-                mLatestPostPresenter.getSimplePostList(1, SharePrefUtil.getPageSize(mActivity), "new", mActivity);
+
+                // 使用 Discourse API 获取最新创建的帖子
+                if (presenter instanceof com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) {
+                    ((com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) presenter).getNewTopics();
+                } else {
+                    mLatestPostPresenter.getSimplePostList(1, SharePrefUtil.getPageSize(mActivity), "new", mActivity);
+                }
             }
 
             @Override
             public void onLoadMore(RefreshLayout refreshLayout) {
-                mLatestPostPresenter.getSimplePostList(total_post_page, SharePrefUtil.getPageSize(mActivity), "new", mActivity);
+                // Discourse API 暂不支持分页，直接完成加载
+                refreshLayout.finishLoadMore();
+                showToast("已加载全部内容", ToastType.TYPE_NORMAL);
             }
         });
     }

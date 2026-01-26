@@ -29,11 +29,11 @@ import java.util.regex.Pattern
 /**
  * Created by sca_tl on 2022/12/5 10:55
  */
-class NewPostDetailPresenter: BaseVBPresenter<NewPostDetailView>() {
+open class NewPostDetailPresenter: BaseVBPresenter<NewPostDetailView>() {
 
     private val postModel = PostModel()
 
-    fun getDetail(page: Int, pageSize: Int, order: Int, topicId: Int, authorId: Int) {
+    open fun getDetail(page: Int, pageSize: Int, order: Int, topicId: Int, authorId: Int) {
         val observable1 = RetrofitUtil
             .getInstance()
             .apiService

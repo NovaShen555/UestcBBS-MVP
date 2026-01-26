@@ -55,6 +55,7 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
     private var currentSort = SORT.DEFAULT
     private lateinit var commentAdapter: PostCommentAdapter
     private var totalCommentData = mutableListOf<PostDetailBean.ListBean>()
+    private var dataLoadedFromEvent = false // 标记是否已从 EventBus 加载数据
 
     enum class SORT {
         DEFAULT, NEW, AUTHOR, FLOOR
@@ -109,7 +110,9 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
     }
 
     override fun lazyLoad() {
-        mPresenter?.getPostComment(page, PAGE_SIZE, order, topicId, sortAuthorId)
+        // 不再请求原有 API，评论数据将通过 EventBus 从 PostDetailBean 中获取
+        // 显示加载状态，等待 EventBus 事件
+        mBinding.statusView.loading()
     }
 
     override fun setOnItemClickListener() {
@@ -118,7 +121,8 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
                 val intent = Intent(context, CreateCommentActivity::class.java).apply {
                     putExtra(Constant.IntentKey.BOARD_ID, boardId)
                     putExtra(Constant.IntentKey.TOPIC_ID, topicId)
-                    putExtra(Constant.IntentKey.QUOTE_ID, commentAdapter.data[position].reply_posts_id)
+                    // 使用 position 字段（楼层号）而不是 reply_posts_id（post ID）
+                    putExtra(Constant.IntentKey.QUOTE_ID, commentAdapter.data[position].position)
                     putExtra(Constant.IntentKey.IS_QUOTE, true)
                     putExtra(Constant.IntentKey.USER_NAME, commentAdapter.data[position].reply_name)
                     putExtra(Constant.IntentKey.POSITION, position)
@@ -190,13 +194,14 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
             page = 1
             mBinding.statusView.loading()
             commentAdapter.setNewData(ArrayList())
-            mPresenter?.getPostComment(page, if (currentSort == SORT.FLOOR) 1000 else PAGE_SIZE, order, topicId, sortAuthorId)
+            // 不再请求 API，排序功能暂时禁用（需要在本地对已有数据排序）
             EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.COMMENT_SORT_CHANGE, currentSort))
         }
     }
 
     override fun onLoadMore(refreshLayout: RefreshLayout) {
-        mPresenter?.getPostComment(page, PAGE_SIZE, order, topicId, sortAuthorId)
+        // Discourse API 一次返回所有评论，不需要加载更多
+        mBinding.refreshLayout.finishLoadMore()
     }
 
     override fun onGetPostCommentSuccess(postDetailBean: PostDetailBean) {
@@ -338,7 +343,7 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
     override fun onStickReplySuccess(msg: String?) {
         showToast(msg, ToastType.TYPE_SUCCESS)
         mBinding.recyclerView.scrollToPosition(0)
-        mPresenter?.getPostComment(page, PAGE_SIZE, order, topicId, sortAuthorId)
+        // 不再重新请求数据，置顶后需要手动刷新页面
     }
 
     override fun onStickReplyError(msg: String?) {
@@ -417,6 +422,15 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
                 if (positionByPid != null) {
                     jumpToCommentIfPossible(positionByPid, false)
                 }
+            }
+        } else if (baseEvent.eventCode == BaseEvent.EventCode.POST_DETAIL_LOADED) {
+            // 接收帖子详情数据，直接使用而不重新请求
+            val postDetailBean = baseEvent.eventData as? PostDetailBean
+            if (postDetailBean != null && postDetailBean.topic.topic_id == topicId) {
+                // 标记已从 EventBus 加载数据
+                dataLoadedFromEvent = true
+                // 直接使用已有的评论数据
+                onGetPostCommentSuccess(postDetailBean)
             }
         }
     }

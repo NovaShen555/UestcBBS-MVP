@@ -235,9 +235,36 @@ class PostContentAdapter(val mContext: Context,
             } while (textData.startsWith("\r\n"))
         }
 
-        textData = textData.replace("\r\n", "<br>")
+        // 检查是否包含 HTML 标签（特别是 img 标签）
+        if (textData.contains("<img") || textData.contains("<p>") || textData.contains("<br>")) {
+            // 使用 Html.fromHtml 渲染 HTML 内容，支持图文混排
+            val spanned = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                android.text.Html.fromHtml(textData, android.text.Html.FROM_HTML_MODE_LEGACY,
+                    HtmlImageGetter(holder.text, mContext), null)
+            } else {
+                @Suppress("DEPRECATION")
+                android.text.Html.fromHtml(textData, HtmlImageGetter(holder.text, mContext), null)
+            }
 
-        holder.text.setText(textData)
+            // 替换 ImageSpan 为自定义的 VerticalImageSpan 以实现底部对齐
+            val spannableString = android.text.SpannableStringBuilder(spanned)
+            val imageSpans = spannableString.getSpans(0, spannableString.length, android.text.style.ImageSpan::class.java)
+            for (span in imageSpans) {
+                val start = spannableString.getSpanStart(span)
+                val end = spannableString.getSpanEnd(span)
+                val flags = spannableString.getSpanFlags(span)
+
+                spannableString.removeSpan(span)
+                spannableString.setSpan(VerticalImageSpan(span.drawable), start, end, flags)
+            }
+
+            holder.text.text = spannableString
+        } else {
+            // 纯文本，直接设置
+            textData = textData.replace("\r\n", "<br>")
+            holder.text.setText(textData)
+        }
+
         holder.text.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.add("复制全文").setOnMenuItemClickListener {
                 ClipBoardUtil.copyToClipBoard(mContext, mWholeText.toString())
@@ -408,5 +435,162 @@ class PostContentAdapter(val mContext: Context,
 
     enum class TYPE {
         TOPIC, REPLY, QUOTE, VIEW_ORIGIN
+    }
+}
+
+/**
+ * 自定义 ImageGetter，用于在 TextView 中加载和显示图片
+ * 支持根据图片尺寸智能调整显示大小
+ */
+class HtmlImageGetter(private val textView: TextView, private val context: Context) : android.text.Html.ImageGetter {
+
+    override fun getDrawable(source: String?): android.graphics.drawable.Drawable {
+        val placeholder = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+
+        if (source.isNullOrEmpty()) {
+            return placeholder
+        }
+
+        // 创建一个 URLDrawable 作为占位符
+        val urlDrawable = URLDrawable()
+
+        // 使用 Glide 异步加载图片
+        com.bumptech.glide.Glide.with(context)
+            .asBitmap()
+            .load(source)
+            .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                override fun onResourceReady(
+                    resource: android.graphics.Bitmap,
+                    transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?
+                ) {
+                    val drawable = android.graphics.drawable.BitmapDrawable(context.resources, resource)
+
+                    // 获取 TextView 的文字大小
+                    val textSize = textView.textSize
+
+                    // 获取屏幕宽度
+                    val screenWidth = context.resources.displayMetrics.widthPixels
+                    val maxWidth = (screenWidth * 0.9).toInt()
+                    val maxHeight = (screenWidth * 0.9).toInt()
+
+                    val imageWidth = resource.width
+                    val imageHeight = resource.height
+
+                    // 判断是否是小图（表情包）：宽高都小于等于 100px
+                    val isEmoji = imageWidth <= 100 && imageHeight <= 100
+
+                    val finalWidth: Int
+                    val finalHeight: Int
+
+                    if (isEmoji) {
+                        // 表情包：大小与文字一致
+                        // 使用文字高度的 1.2 倍作为表情包大小（稍微大一点点更清晰）
+                        val emojiSize = (textSize * 1.2).toInt()
+
+                        // 按比例缩放
+                        if (imageWidth > imageHeight) {
+                            finalWidth = emojiSize
+                            finalHeight = (imageHeight * emojiSize.toFloat() / imageWidth).toInt()
+                        } else {
+                            finalHeight = emojiSize
+                            finalWidth = (imageWidth * emojiSize.toFloat() / imageHeight).toInt()
+                        }
+                    } else {
+                        // 大图：按比例缩放到最大宽度
+                        if (imageWidth > maxWidth || imageHeight > maxHeight) {
+                            val scale = Math.min(
+                                maxWidth.toFloat() / imageWidth,
+                                maxHeight.toFloat() / imageHeight
+                            )
+                            finalWidth = (imageWidth * scale).toInt()
+                            finalHeight = (imageHeight * scale).toInt()
+                        } else {
+                            // 图片小于最大尺寸，保持原始大小
+                            finalWidth = imageWidth
+                            finalHeight = imageHeight
+                        }
+                    }
+
+                    drawable.setBounds(0, 0, finalWidth, finalHeight)
+                    urlDrawable.drawable = drawable
+                    urlDrawable.setBounds(0, 0, finalWidth, finalHeight)
+
+                    // 刷新 TextView
+                    textView.text = textView.text
+                    textView.invalidate()
+                }
+
+                override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                    // 清理资源
+                }
+            })
+
+        return urlDrawable
+    }
+}
+
+/**
+ * 用于异步加载图片的 Drawable
+ */
+class URLDrawable : android.graphics.drawable.BitmapDrawable() {
+    var drawable: android.graphics.drawable.Drawable? = null
+
+    override fun draw(canvas: android.graphics.Canvas) {
+        drawable?.draw(canvas)
+    }
+}
+
+/**
+ * 自定义 ImageSpan，实现图片底部与文字底部对齐
+ */
+class VerticalImageSpan(drawable: android.graphics.drawable.Drawable?) : android.text.style.ImageSpan(drawable!!) {
+
+    override fun getSize(
+        paint: android.graphics.Paint,
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        fm: android.graphics.Paint.FontMetricsInt?
+    ): Int {
+        val drawable = drawable
+        val rect = drawable.bounds
+
+        if (fm != null) {
+            val pfm = paint.fontMetricsInt
+            // 保持文字的行高不变
+            fm.ascent = pfm.ascent
+            fm.descent = pfm.descent
+            fm.top = pfm.top
+            fm.bottom = pfm.bottom
+        }
+
+        return rect.right
+    }
+
+    override fun draw(
+        canvas: android.graphics.Canvas,
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: android.graphics.Paint
+    ) {
+        val drawable = drawable
+        canvas.save()
+
+        // 计算图片的绘制位置，使其底部与文字底部对齐
+        val drawableHeight = drawable.bounds.height()
+        val fontMetrics = paint.fontMetricsInt
+        val textBottom = y + fontMetrics.descent
+
+        // 图片底部对齐到文字底部
+        val transY = textBottom - drawableHeight
+
+        canvas.translate(x, transY.toFloat())
+        drawable.draw(canvas)
+        canvas.restore()
     }
 }

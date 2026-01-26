@@ -36,6 +36,7 @@ import com.novashen.riverside.module.post.adapter.DianPingAdapter
 import com.novashen.riverside.module.post.adapter.NewPostDetailPagerAdapter
 import com.novashen.riverside.module.post.adapter.PostCollectionAdapter
 import com.novashen.riverside.module.post.adapter.PostContentAdapter
+import com.novashen.riverside.module.post.presenter.DiscoursePostDetailPresenter
 import com.novashen.riverside.module.post.presenter.NewPostDetailPresenter
 import com.novashen.riverside.module.report.ReportFragment
 import com.novashen.riverside.module.search.view.SearchActivity
@@ -103,7 +104,10 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
         mPresenter?.getDetail(1, 0, 0, topicId, 0)
     }
 
-    override fun initPresenter() = NewPostDetailPresenter()
+    override fun initPresenter(): NewPostDetailPresenter {
+        // 使用 Discourse API
+        return DiscoursePostDetailPresenter()
+    }
 
     override fun getContext() = this
 
@@ -323,6 +327,11 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
         }.attach()
 
         mBinding.viewpager.setCurrentItem(1, false)
+
+        // 在 ViewPager 创建后延迟发送 EventBus 事件，确保 CommentFragment 已经注册
+        mBinding.viewpager.post {
+            EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.POST_DETAIL_LOADED, postDetailBean))
+        }
 
         postContentAdapter = PostContentAdapter(this, topicId,
             onVoteClick = {
@@ -559,6 +568,13 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
                     mBinding.tabLayout.getTabAt(1)?.apply {
                         text = "评论".plus("(").plus(if (event.commentNum == 0) 0 else event.commentNum).plus(")")
                     }
+                }
+            }
+            BaseEvent.EventCode.REFRESH_POST_DETAIL -> {
+                // 刷新帖子详情
+                val refreshTopicId = baseEvent.eventData as Int
+                if (topicId == refreshTopicId) {
+                    mPresenter?.getDetail(1, 20, 0, topicId, 0)
                 }
             }
         }

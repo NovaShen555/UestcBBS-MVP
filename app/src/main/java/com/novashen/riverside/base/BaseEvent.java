@@ -59,6 +59,8 @@ public class BaseEvent<T> {
         public static final int LOCATE_COMMENT = 50;
         public static final int COMMENT_REFRESHED = 51;
         public static final int BLACK_LIST_DATA_CHANGED = 52;
+        public static final int POST_DETAIL_LOADED = 53; // 帖子详情加载完成
+        public static final int REFRESH_POST_DETAIL = 54; // 刷新帖子详情
     }
 
 }

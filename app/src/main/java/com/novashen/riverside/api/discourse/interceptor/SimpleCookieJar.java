@@ -1,8 +1,5 @@
 package com.novashen.riverside.api.discourse.interceptor;
 
-import android.util.Log;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +30,7 @@ public class SimpleCookieJar implements CookieJar {
             // 移除同名的旧 cookie
             existingCookies.removeIf(cookie -> cookie.name().equals(newCookie.name()));
             existingCookies.add(newCookie);
-            Log.d(TAG, "Saved cookie: " + newCookie.name() + " for host: " + host);
+            logDebug("Saved cookie: " + newCookie.name() + " for host: " + host);
         }
 
         cookieStore.put(host, existingCookies);
@@ -51,7 +48,7 @@ public class SimpleCookieJar implements CookieJar {
                     validCookies.add(cookie);
                 }
             }
-            Log.d(TAG, "Loaded " + validCookies.size() + " cookies for host: " + host);
+            logDebug("Loaded " + validCookies.size() + " cookies for host: " + host);
             return validCookies;
         }
         return new ArrayList<>();
@@ -62,7 +59,7 @@ public class SimpleCookieJar implements CookieJar {
      */
     public void clear() {
         cookieStore.clear();
-        Log.d(TAG, "Cleared all cookies");
+        logDebug("Cleared all cookies");
     }
 
     /**
@@ -70,6 +67,18 @@ public class SimpleCookieJar implements CookieJar {
      */
     public void clear(String host) {
         cookieStore.remove(host);
-        Log.d(TAG, "Cleared cookies for host: " + host);
+        logDebug("Cleared cookies for host: " + host);
+    }
+
+    /**
+     * 日志输出（兼容单元测试）
+     */
+    private void logDebug(String message) {
+        try {
+            android.util.Log.d(TAG, message);
+        } catch (RuntimeException e) {
+            // 在单元测试环境中，Android Log 会抛出异常，使用 System.out
+            System.out.println(TAG + ": " + message);
+        }
     }
 }

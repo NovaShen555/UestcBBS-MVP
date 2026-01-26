@@ -41,7 +41,12 @@ public class ExceptionHelper {
                     ex.message = "401 Error:" + httpException.getMessage();
                     break;
                 case FORBIDDEN:
-                    ex.message = "403 FORBIDDEN！" + httpException.getMessage();
+                    try {
+                        String errorBody = Objects.requireNonNull(Objects.requireNonNull(httpException.response()).errorBody()).string();
+                        ex.message = "403 FORBIDDEN！详细信息: " + errorBody;
+                    } catch (Exception exc) {
+                        ex.message = "403 FORBIDDEN！" + httpException.getMessage();
+                    }
                     break;
                 case NOT_FOUND:
                     ex.message = "404 NOT FOUND:" + httpException.getMessage();

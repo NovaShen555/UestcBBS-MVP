@@ -28,7 +28,7 @@ import com.novashen.riverside.helper.glidehelper.GlideEngineForPictureSelector
 import com.novashen.riverside.module.account.view.SwitchAccountView
 import com.novashen.riverside.module.post.adapter.AttachmentAdapter
 import com.novashen.riverside.module.post.adapter.CreateCommentImageAdapter
-import com.novashen.riverside.module.post.presenter.CreateCommentPresenter
+import com.novashen.riverside.module.post.presenter.DiscourseCreateCommentPresenter
 import com.novashen.riverside.module.user.view.AtUserListActivity
 import com.novashen.riverside.util.CommonUtil
 import com.novashen.riverside.util.Constant
@@ -45,7 +45,7 @@ import java.io.File
 /**
  * Created by sca_tl at 2023/4/17 9:36
  */
-class CreateCommentActivity: BaseVBActivity<CreateCommentPresenter, CreateCommentView, ActivityCreateCommentBinding>(), CreateCommentView, IEmotionEventListener {
+class CreateCommentActivity: BaseVBActivity<DiscourseCreateCommentPresenter, CreateCommentView, ActivityCreateCommentBinding>(), CreateCommentView, IEmotionEventListener {
 
     private var boardId = Int.MAX_VALUE
     private var topicId = Int.MAX_VALUE
@@ -75,7 +75,7 @@ class CreateCommentActivity: BaseVBActivity<CreateCommentPresenter, CreateCommen
 
     override fun getViewBinding() = ActivityCreateCommentBinding.inflate(layoutInflater)
 
-    override fun initPresenter()= CreateCommentPresenter()
+    override fun initPresenter()= DiscourseCreateCommentPresenter()
 
     override fun getContext() = this
 
@@ -256,6 +256,9 @@ class CreateCommentActivity: BaseVBActivity<CreateCommentPresenter, CreateCommen
             it.replyId = currentReplyUid
         }
         EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.SEND_COMMENT_SUCCESS, successEntity))
+
+        // 发送刷新帖子详情的事件，让帖子详情页重新加载
+        EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.REFRESH_POST_DETAIL, topicId))
 
         exit()
     }

@@ -10,7 +10,7 @@ import com.novashen.riverside.base.BaseEvent
 import com.novashen.riverside.base.BaseVBDialogFragment
 import com.novashen.riverside.databinding.FragmentLoginBinding
 import com.novashen.riverside.entity.LoginBean
-import com.novashen.riverside.module.account.presenter.LoginPresenter
+import com.novashen.riverside.module.account.presenter.DiscourseLoginPresenter
 import com.novashen.riverside.util.CommonUtil
 import com.novashen.riverside.util.showToast
 import com.novashen.riverside.widget.span.CustomClickableSpan
@@ -19,7 +19,7 @@ import org.greenrobot.eventbus.EventBus
 /**
  * Created by sca_tl at 2023/6/2 14:10
  */
-class LoginFragment: BaseVBDialogFragment<LoginPresenter, LoginView, FragmentLoginBinding>(), LoginView {
+class LoginFragment: BaseVBDialogFragment<DiscourseLoginPresenter, LoginView, FragmentLoginBinding>(), LoginView {
 
     companion object {
         fun getInstance(bundle: Bundle?) = LoginFragment().apply { arguments = bundle }
@@ -27,7 +27,7 @@ class LoginFragment: BaseVBDialogFragment<LoginPresenter, LoginView, FragmentLog
 
     override fun getViewBinding() = FragmentLoginBinding.inflate(layoutInflater)
 
-    override fun initPresenter() = LoginPresenter()
+    override fun initPresenter() = DiscourseLoginPresenter()
 
     override fun initView() {
         mBinding.loginBtn.setOnClickListener(this)
@@ -48,7 +48,7 @@ class LoginFragment: BaseVBDialogFragment<LoginPresenter, LoginView, FragmentLog
                 mBinding.loginBtn.isEnabled = false
                 mPresenter?.login(context, mBinding.userName.text.toString(), mBinding.userPsw.text.toString())
             } else {
-                showToast("请勾选“我已阅读并同意《清水河畔论坛总版规》”", ToastType.TYPE_WARNING)
+                showToast("请勾选\"我已阅读并同意《清水河畔论坛总版规》\"", ToastType.TYPE_WARNING)
             }
         }
     }

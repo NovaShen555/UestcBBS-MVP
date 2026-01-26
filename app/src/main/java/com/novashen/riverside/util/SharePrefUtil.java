@@ -204,6 +204,24 @@ public class SharePrefUtil {
         return sharedPreferences.getBoolean("superLogin-" + userName, false);
     }
 
+    /**
+     * 设置是否已显示欢迎页
+     */
+    public static void setWelcomeShown(Context context, boolean shown) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("welcome_shown", shown);
+        editor.apply();
+    }
+
+    /**
+     * 获取是否已显示欢迎页
+     */
+    public static boolean isWelcomeShown(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean("welcome_shown", false);
+    }
+
     public static void setUploadHash(Context context, String hash, String userName) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("cookies", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -302,6 +320,44 @@ public class SharePrefUtil {
     public static Set<String> getShowOnceDialogId(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
         return sharedPreferences.getStringSet("showOnceDialogIds", new HashSet<>());
+    }
+
+    /**
+     * 保存 Discourse 用户名和密码（用于自动重新登录）
+     */
+    public static void setDiscourseCredentials(Context context, String username, String password) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("discourse", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("username", username);
+        editor.putString("password", password);
+        editor.apply();
+    }
+
+    /**
+     * 获取 Discourse 用户名
+     */
+    public static String getDiscourseUsername(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("discourse", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("username", "");
+    }
+
+    /**
+     * 获取 Discourse 密码
+     */
+    public static String getDiscoursePassword(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("discourse", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("password", "");
+    }
+
+    /**
+     * 清除 Discourse 凭证
+     */
+    public static void clearDiscourseCredentials(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("discourse", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("username");
+        editor.remove("password");
+        editor.apply();
     }
 
 }

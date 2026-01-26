@@ -104,6 +104,9 @@ class MainActivity: BaseVBActivity<MainPresenter, MainView, ActivityMainBinding>
         startService()
         mPresenter?.getSettings()
         mPresenter?.getUpdate(SystemUtil.getVersionCode(this), false)
+
+        // 显示欢迎弹窗（首次打开应用）
+        showWelcomeDialogIfNeeded()
     }
 
     override fun onClick(v: View) {
@@ -269,4 +272,13 @@ class MainActivity: BaseVBActivity<MainPresenter, MainView, ActivityMainBinding>
     override fun registerEventBus() = true
 
     override fun getContext() = this
+
+    /**
+     * 显示欢迎弹窗（首次打开应用）
+     */
+    private fun showWelcomeDialogIfNeeded() {
+        if (!SharePrefUtil.isWelcomeShown(this)) {
+            WelcomeDialogFragment.newInstance().show(supportFragmentManager, "welcome")
+        }
+    }
 }

@@ -65,29 +65,8 @@ class CommentPresenter: BaseVBPresenter<CommentView>() {
     }
 
     fun getPostComment(page: Int, pageSize: Int, order: Int, topicId: Int, authorId: Int) {
-        postModel.getPostDetail(page, pageSize, order, topicId, authorId,
-            SharePrefUtil.getToken(mView?.getContext()),
-            SharePrefUtil.getSecret(mView?.getContext()),
-            object : Observer<PostDetailBean>() {
-                override fun OnSuccess(postDetailBean: PostDetailBean) {
-                    if (postDetailBean.rs == ApiConstant.Code.SUCCESS_CODE) {
-                        mView?.onGetPostCommentSuccess(postDetailBean)
-                    }
-                    if (postDetailBean.rs == ApiConstant.Code.ERROR_CODE) {
-                        mView?.onGetPostCommentError(postDetailBean.head.errInfo, ApiConstant.Code.ERROR_CODE)
-                    }
-                }
-
-                override fun onError(e: ResponseThrowable) {
-                    mView?.onGetPostCommentError(e.message, e.code)
-                }
-
-                override fun OnCompleted() { }
-
-                override fun OnDisposable(d: Disposable) {
-                    mCompositeDisposable?.add(d)
-                }
-            })
+        // 不再请求原有 API，评论数据将通过 EventBus 从 PostDetailBean 中获取
+        // 这个方法保留为空，避免调用原有站点的 API
     }
 
     fun support(tid: Int, pid: Int, type: String, action: String, position: Int) {
