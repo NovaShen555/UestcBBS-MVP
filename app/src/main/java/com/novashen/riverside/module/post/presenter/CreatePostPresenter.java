@@ -31,7 +31,9 @@ import com.novashen.riverside.entity.UploadResultBean;
 import com.novashen.riverside.helper.ExceptionHelper;
 import com.novashen.riverside.helper.rxhelper.Observer;
 import com.novashen.riverside.module.post.model.PostModel;
+import com.novashen.riverside.module.post.model.DiscoursePostModel;
 import com.novashen.riverside.module.post.view.CreatePostView;
+import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.util.CommonUtil;
 import com.novashen.riverside.util.Constant;
 import com.novashen.riverside.util.FileUtil;
@@ -61,6 +63,7 @@ import top.zibin.luban.OnCompressListener;
 public class CreatePostPresenter extends BasePresenter<CreatePostView> {
 
     PostModel postModel = new PostModel();
+    DiscoursePostModel discoursePostModel = new DiscoursePostModel();
 
     public void sendPost(ContentEditor contentEditor,
                          int boardId,
@@ -214,6 +217,66 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
                     }
                 });
 
+    }
+
+    /**
+     * 发表Discourse帖子
+     * @param contentEditor 内容编辑器
+     * @param categoryId 板块ID
+     * @param title 帖子标题
+     */
+    public void sendDiscoursePost(ContentEditor contentEditor, int categoryId, String title) {
+        // 从ContentEditor中提取纯文本内容
+        StringBuilder rawContent = new StringBuilder();
+        try {
+            List<ContentEditor.EditData> data = contentEditor.buildEditorData();
+            for (int i = 0; i < data.size(); i++) {
+                if (data.get(i).content_type == ContentEditor.CONTENT_TYPE_TEXT) {
+                    rawContent.append(data.get(i).inputStr);
+                    if (i < data.size() - 1) {
+                        rawContent.append("\n");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            view.onSendPostError("发表帖子失败：" + e.getMessage());
+            return;
+        }
+
+        // 调用Discourse API发表帖子
+        discoursePostModel.createNewTopic(title, rawContent.toString(), categoryId,
+                new Observer<CreatePostResponse>() {
+                    @Override
+                    public void OnSuccess(CreatePostResponse response) {
+                        // 创建一个SendPostBean来兼容现有的回调接口
+                        SendPostBean sendPostBean = new SendPostBean();
+                        sendPostBean.rs = ApiConstant.Code.SUCCESS_CODE;
+                        view.onSendPostSuccess(sendPostBean);
+                    }
+
+                    @Override
+                    public void onError(ExceptionHelper.ResponseThrowable e) {
+                        // 尝试从多个来源获取错误信息
+                        String errorMsg = e.message;
+                        if (errorMsg == null || errorMsg.isEmpty() || "null".equals(errorMsg)) {
+                            if (e.getCause() != null && e.getCause().getMessage() != null) {
+                                errorMsg = e.getCause().getMessage();
+                            } else {
+                                errorMsg = "未知错误：" + e.toString();
+                            }
+                        }
+                        view.onSendPostError(errorMsg);
+                    }
+
+                    @Override
+                    public void OnCompleted() {
+                    }
+
+                    @Override
+                    public void OnDisposable(Disposable d) {
+                        disposable.add(d);
+                    }
+                });
     }
 
     /**

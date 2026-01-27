@@ -26,12 +26,13 @@ public class DiscourseAuthInterceptor implements Interceptor {
         Request originalRequest = chain.request();
         Response response = chain.proceed(originalRequest);
 
-        // 如果是 403 Forbidden 且不是登录或 CSRF 请求，尝试重新登录
-        if (response.code() == 403 &&
+        // 如果是 403 Forbidden 或 422 Unprocessable Entity 且不是登录或 CSRF 请求，尝试重新登录
+        // 422 错误可能是由于 session 过期导致的，也需要重新登录
+        if ((response.code() == 403 || response.code() == 422) &&
             !originalRequest.url().encodedPath().contains("/session") &&
             !isRefreshing) {
 
-            logDebug("Received 403, attempting to re-login");
+            logDebug("Received " + response.code() + ", attempting to re-login");
 
             synchronized (lock) {
                 if (isRefreshing) {

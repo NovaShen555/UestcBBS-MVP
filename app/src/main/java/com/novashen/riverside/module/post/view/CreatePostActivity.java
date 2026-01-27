@@ -41,6 +41,7 @@ import com.novashen.riverside.entity.CommonPostBean;
 import com.novashen.riverside.entity.SelectBoardResultEvent;
 import com.novashen.riverside.entity.UserDetailBean;
 import com.novashen.riverside.module.board.view.SelectBoardFragment;
+import com.novashen.riverside.module.board.view.DiscourseSelectBoardFragment;
 import com.novashen.riverside.util.DebugUtil;
 import com.novashen.riverside.widget.MyLinearLayoutManger;
 import com.novashen.riverside.widget.ContentEditor;
@@ -124,6 +125,8 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
     private boolean sendPostSuccess;
 
     private boolean isSanShui;
+
+    // 全部使用Discourse API发帖
 
     private Map<Uri, Integer> attachments = new LinkedHashMap<>(); //附件aid
 
@@ -322,7 +325,7 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
         }
 
         if (view.getId() == R.id.create_post_board_name) {
-            SelectBoardFragment.Companion.getInstance(null)
+            DiscourseSelectBoardFragment.Companion.getInstance(null)
                     .show(getSupportFragmentManager(), TimeUtil.getStringMs());
         }
         if (view.getId() == R.id.create_post_send_btn || view.getId() == R.id.create_post_send_btn_1) {
@@ -377,40 +380,19 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
     private void createCommonPost() {
         if (currentBoardId == 0) {
             showToast("请选择板块", ToastType.TYPE_WARNING);
-        } else if (currentAnonymous && currentBoardId != 371) {
-            showToast("您勾选了匿名，请选择密语板块（成电校园->水手之家->密语）", ToastType.TYPE_WARNING);
+            return;
+        }
+
+        // 全部使用Discourse API发帖
+        if (TextUtils.isEmpty(postTitle.getText().toString())) {
+            showToast("请输入帖子标题", ToastType.TYPE_ERROR);
+        } else if (contentEditor.isEditorEmpty()) {
+            showToast("请输入帖子内容", ToastType.TYPE_ERROR);
         } else {
-            if (contentEditor.getImgPathList().size() == 0){//没有图片
-                progressDialog.setMessage("正在发表帖子，请稍候...");
-                progressDialog.show();
+            progressDialog.setMessage("正在发表帖子，请稍候...");
+            progressDialog.show();
 
-                presenter.sendPost(contentEditor,
-                        currentBoardId, currentFilterId, postTitle.getText().toString(),
-                        new ArrayList<>(), new ArrayList<>(),
-                        currentPollOptions, attachments, currentPollChoice, currentPollExp,
-                        currentPollVisible, currentPollShowVoters, currentAnonymous, currentOnlyAuthor,
-                        this);
-            } else {//有图片
-                if (!currentOriginalPic) {
-                    progressDialog.setMessage("正在压缩图片，请稍候...");
-                    progressDialog.show();
-
-                    presenter.compressImage(this, contentEditor.getImgPathList());
-                } else {
-
-                    progressDialog.setMessage("正在上传原图，请稍候...");
-                    progressDialog.show();
-
-                    List<File> originalPicFiles = new ArrayList<>();
-                    List<String> imgs = contentEditor.getImgPathList();
-                    for (int i = 0; i < imgs.size(); i ++) {
-                        File file = new File(imgs.get(i));
-                        originalPicFiles.add(file);
-                    }
-                    presenter.uploadImages(originalPicFiles, "forum", "image", this);
-                }
-
-            }
+            presenter.sendDiscoursePost(contentEditor, currentBoardId, postTitle.getText().toString());
         }
     }
 
@@ -616,8 +598,9 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
             currentBoardName = boardSelected.getChildBoardName();
             currentFilterId = boardSelected.getClassificationId();
             currentFilterName = boardSelected.getClassificationName();
-            boardName.setText(new StringBuilder().append(currentBoardName).append("-").append(currentFilterName));
-            //GlideLoader4Common.simpleLoad(this, SharePrefUtil.getBoardImg(this, currentBoardId), boardIcon);
+
+            // 全部使用Discourse板块，直接显示板块名称
+            boardName.setText(currentBoardName);
         }
         if (baseEvent.eventCode == BaseEvent.EventCode.DELETE_POLL) {
             pollLayout.setVisibility(View.GONE);

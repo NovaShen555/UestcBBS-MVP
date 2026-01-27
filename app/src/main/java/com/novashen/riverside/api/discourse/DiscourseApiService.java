@@ -1,5 +1,7 @@
 package com.novashen.riverside.api.discourse;
 
+import com.novashen.riverside.api.discourse.entity.CategoriesResponse;
+import com.novashen.riverside.api.discourse.entity.CategoryDetailResponse;
 import com.novashen.riverside.api.discourse.entity.CreatePostRequest;
 import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.api.discourse.entity.CsrfTokenResponse;
@@ -83,4 +85,17 @@ public interface DiscourseApiService {
     Observable<Response<CreatePostResponse>> createPost(
             @retrofit2.http.Body CreatePostRequest body
     );
+
+    /**
+     * 获取所有板块分类
+     */
+    @GET("categories.json")
+    Observable<CategoriesResponse> getCategories();
+
+    /**
+     * 获取板块详情
+     * @param categoryId 板块ID
+     */
+    @GET("c/{category_id}/show.json")
+    Observable<CategoryDetailResponse> getCategoryDetail(@Path("category_id") int categoryId);
 }
