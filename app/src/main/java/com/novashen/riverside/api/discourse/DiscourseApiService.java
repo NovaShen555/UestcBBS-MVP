@@ -5,6 +5,9 @@ import com.novashen.riverside.api.discourse.entity.CategoryDetailResponse;
 import com.novashen.riverside.api.discourse.entity.CreatePostRequest;
 import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.api.discourse.entity.CsrfTokenResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserSummaryResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
 import com.novashen.riverside.api.discourse.entity.LoginResponse;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
@@ -98,4 +101,28 @@ public interface DiscourseApiService {
      */
     @GET("c/{category_id}/show.json")
     Observable<CategoryDetailResponse> getCategoryDetail(@Path("category_id") int categoryId);
+
+    /**
+     * 获取用户信息
+     * @param username 用户名
+     */
+    @GET("u/{username}.json")
+    Observable<DiscourseUserResponse> getUserInfo(@Path("username") String username);
+
+    /**
+     * 获取用户摘要信息
+     * @param username 用户名
+     */
+    @GET("u/{username}/summary.json")
+    Observable<DiscourseUserSummaryResponse> getUserSummary(@Path("username") String username);
+
+    @GET("topics/created-by/{username}.json")
+    Observable<TopicListResponse> getUserTopics(@Path("username") String username);
+
+    @GET("user_actions.json")
+    Observable<DiscourseUserActionResponse> getUserActions(
+        @retrofit2.http.Query("offset") int offset,
+        @retrofit2.http.Query("username") String username,
+        @retrofit2.http.Query("filter") int filter
+    );
 }

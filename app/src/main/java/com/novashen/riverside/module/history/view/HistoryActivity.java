@@ -85,6 +85,7 @@ public class HistoryActivity extends BaseActivity implements HistoryView{
             if (view1.getId() == R.id.item_history_avatar) {
                 Intent intent = new Intent(this, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, historyAdapter.getData().get(position).user_id);
+                intent.putExtra(Constant.IntentKey.USER_NAME, historyAdapter.getData().get(position).user_nick_name);
                 startActivity(intent);
             }
         });

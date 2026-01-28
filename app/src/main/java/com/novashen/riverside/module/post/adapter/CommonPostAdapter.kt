@@ -1,6 +1,7 @@
 package com.novashen.riverside.module.post.adapter
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Rect
 import android.graphics.drawable.VectorDrawable
 import android.text.SpannableStringBuilder
@@ -45,6 +46,7 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
 
     override fun convert(helper: BaseViewHolder, item: CommonPostBean.ListBean) {
         super.convert(helper, item)
+        val hideContent = false
         val avatar = helper.getView<ImageView>(R.id.avatar)
         val userName = helper.getView<TextView>(R.id.user_name)
         val time = helper.getView<TextView>(R.id.time)
@@ -56,18 +58,48 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
         val commentCount = helper.getView<TextView>(R.id.comment_count)
         val viewCount = helper.getView<TextView>(R.id.view_count)
 
-        helper
-            .addOnClickListener(R.id.avatar)
-            .addOnClickListener(R.id.board_name)
-            .addOnClickListener(R.id.content_layout)
+            helper
+                .addOnClickListener(R.id.avatar)
+                .addOnClickListener(R.id.board_name)
+                .addOnClickListener(R.id.content_layout) // Make content clickable
+            
+            helper.itemView.setOnClickListener {
+                if (item.topic_id != 0) {
+                     val intent = Intent(mContext, com.novashen.riverside.module.post.view.NewPostDetailActivity::class.java)
+                     intent.putExtra(Constant.IntentKey.TOPIC_ID, item.topic_id)
+                     mContext.startActivity(intent)
+                } else if (item.topic_id == 0 && item.board_id == 0) {
+                    // Fallback for old style logic if any
+                    val intent = Intent(mContext, com.novashen.riverside.module.post.PostDetailActivity::class.java)
+                    intent.putExtra(Constant.IntentKey.TOPIC_ID, item.topic_id)
+                    intent.putExtra(Constant.IntentKey.TYPE, type)
+                    mContext.startActivity(intent)
+                } else {
+                     val intent = Intent(mContext, com.novashen.riverside.module.post.PostDetailActivity::class.java)
+                     intent.putExtra(Constant.IntentKey.TOPIC_ID, item.topic_id)
+                     intent.putExtra(Constant.IntentKey.TYPE, type)
+                     mContext.startActivity(intent)
+                }
+            }
 
-        val hideContent: Boolean? = item.subject?.startsWith("防偷窥")
 
         userName.text = item.user_nick_name
         boardName.text = item.board_name
         supportCount.text = " ${item.recommendAdd}"
         commentCount.text = " ${item.replies}"
         viewCount.text = " ${item.hits}"
+        
+        // Fix Discourse Time
+        if (item.last_reply_date != null && item.last_reply_date.length > 10) {
+             // likely ms time string
+             try {
+                time.text = TimeUtil.getFormatDate(item.last_reply_date.toLong(), "yyyy-MM-dd") 
+             } catch (e: Exception) {
+                 time.text = item.last_reply_date
+             }
+        } else {
+             time.text = item.last_reply_date
+        }
 
         if (item.user_id == 0 || "匿名" == item.user_nick_name) {
             avatar.load(R.drawable.ic_anonymous)
@@ -76,9 +108,10 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
         }
 
         content.apply {
-            text = item.subject
-            visibility = if (item.subject.isNullOrEmpty() || hideContent == true) View.GONE else View.VISIBLE
+            text = if (!item.reply_content.isNullOrEmpty()) item.reply_content else item.subject
+            visibility = if ((item.subject.isNullOrEmpty() && item.reply_content.isNullOrEmpty()) || hideContent == true) View.GONE else View.VISIBLE
         }
+
 
         if (item.vote == 1) {
             val spannableStringBuilder = SpannableStringBuilder("I" + item.title)

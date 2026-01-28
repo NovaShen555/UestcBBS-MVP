@@ -163,6 +163,7 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
             mBinding.avatar -> {
                 val intent = Intent(this, UserDetailActivity::class.java).apply {
                     putExtra(Constant.IntentKey.USER_ID, userId)
+                    putExtra(Constant.IntentKey.USER_NAME, postDetailBean?.topic?.user_nick_name)
                 }
                 startActivity(intent)
             }

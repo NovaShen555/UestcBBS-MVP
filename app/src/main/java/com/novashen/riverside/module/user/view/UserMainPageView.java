@@ -6,6 +6,6 @@ package com.novashen.riverside.module.user.view;
  * description:
  */
 public interface UserMainPageView {
-    void onGetUserSpaceSuccess(boolean isOnline, String onLineTime, String registerTime, String lastLoginTime, String ipLocation);
+    void onGetUserSpaceSuccess(String onLineTime, String registerTime, String lastLoginTime, String ipLocation);
     void onGetUserSpaceError(String msg);
 }

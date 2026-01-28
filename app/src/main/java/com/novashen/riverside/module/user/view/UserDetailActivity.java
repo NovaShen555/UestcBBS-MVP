@@ -75,9 +75,8 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
     private LottieAnimationView loading;
     private ImageView background, chatBtn, blackBtn;
     private ImageView avatar;
-    private TextView userNameTv, userSign, userFollowed, userFollow, friendNum, visitorNum, userLevel, userGender, hint;
-    private TextView shuidiNum, jifenNum, favoriteBtn, favoriteToolbarBtn;
-    private LinearLayout shuidiLayout, jifenLayout;
+    private TextView userNameTv, userFollowed, userFollow, userLevel, hint;
+    private TextView favoriteBtn, favoriteToolbarBtn;
     private Button blackedBtn;
     private TabLayout tabLayout;
     private ViewPager2 viewPager2;
@@ -115,25 +114,17 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
         background = findViewById(R.id.user_detail_user_background);
         avatar = findViewById(R.id.user_detail_user_icon);
         userNameTv = findViewById(R.id.user_detail_user_name);
-        userSign = findViewById(R.id.user_detail_user_sign);
         userFollowed = findViewById(R.id.user_detail_followed_num);
         userFollow = findViewById(R.id.user_detail_follow_num);
-        visitorNum = findViewById(R.id.user_detail_visitor_num);
         userLevel = findViewById(R.id.user_detail_user_level);
-        userGender = findViewById(R.id.user_detail_user_gender);
         favoriteBtn = findViewById(R.id.user_detail_favorite_btn);
         chatBtn = findViewById(R.id.user_detail_chat_btn);
         blackBtn = findViewById(R.id.user_detail_black_btn);
         hint = findViewById(R.id.user_detail_hint);
-        shuidiNum = findViewById(R.id.user_detail_shuidi_num);
-        jifenNum = findViewById(R.id.user_detail_jifen_num);
-        shuidiLayout = findViewById(R.id.user_detail_shuidi_layout);
-        jifenLayout = findViewById(R.id.user_detail_jifen_layout);
         tabLayout = findViewById(R.id.user_detail_indicator);
         viewPager2 = findViewById(R.id.user_detail_viewpager);
         loading = findViewById(R.id.user_detail_loading);
         userMedalRv = findViewById(R.id.user_detail_user_medal_rv);
-        friendNum = findViewById(R.id.user_detail_friend_num);
         blackedBtn = findViewById(R.id.user_detail_blacked_btn);
         favoriteToolbarBtn = findViewById(R.id.user_detail_favorite_toolbar_btn);
     }
@@ -146,17 +137,11 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
         favoriteToolbarBtn.setOnClickListener(this::onClickListener);
         chatBtn.setOnClickListener(this);
         blackBtn.setOnClickListener(this);
-        shuidiLayout.setOnClickListener(this);
-        jifenLayout.setOnClickListener(this);
         userLevel.setOnClickListener(this);
-        userGender.setOnClickListener(this);
         userFollowed.setOnClickListener(this);
-        visitorNum.setOnClickListener(this::onClickListener);
-        friendNum.setOnClickListener(this::onClickListener);
         userFollow.setOnClickListener(this);
         appBarLayout.addOnOffsetChangedListener(this);
         avatar.setOnClickListener(this::onClickListener);
-        userSign.setOnClickListener(this);
         blackedBtn.setOnClickListener(this::onClickListener);
 
         if (userId == SharePrefUtil.getUid(this)) {
@@ -165,7 +150,7 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
 
         viewPager2.setOffscreenPageLimit(4);
         ExtensionKt.desensitize(viewPager2);
-        viewPager2.setAdapter(new UserDetailViewPagerAdapter(this, userId));
+        viewPager2.setAdapter(new UserDetailViewPagerAdapter(this, userId, userName));
         viewPager2.setCurrentItem(0, false);
 
         final String[] titles = {"主页", "发表", "回复", "收藏"};
@@ -178,17 +163,19 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
             viewPager2.setCurrentItem(tabIndex, false);
         }
 
-        if (userId == 0) {
-            if (!TextUtils.isEmpty(userName)) {
-                //根据username获取userid
-                presenter.getUidByName(userName);
+        // 只使用Discourse API获取用户信息
+        if (!TextUtils.isEmpty(userName)) {
+            presenter.getDiscourseUserDetail(userName, this);
+        } else if (userId == SharePrefUtil.getUid(this)) {
+            // 查看自己的主页，使用当前登录的用户名
+            String currentUsername = SharePrefUtil.getDiscourseUsername(this);
+            if (!TextUtils.isEmpty(currentUsername)) {
+                presenter.getDiscourseUserDetail(currentUsername, this);
             } else {
-                onGetUserDetailError("用户ID或用户名不正确");
+                onGetUserDetailError("未找到Discourse用户名");
             }
         } else {
-            presenter.getUserDetail(userId, this);
-            presenter.getUserSpace(userId, this);
-            presenter.getUserFriend(userId, UserFriendType.TYPE_FRIEND, this);
+            onGetUserDetailError("需要提供用户名");
         }
     }
 
@@ -215,18 +202,8 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
                 presenter.blackUser(userId, "delblack", this);
             }
         }
-        if (view.getId() == R.id.user_detail_shuidi_layout || view.getId() == R.id.user_detail_jifen_layout) {
-            presenter.showUserInfo(userDetailBean, true, this);
-        }
-        if (view.getId() == R.id.user_detail_user_gender || view.getId() == R.id.user_detail_user_level) {
+        if (view.getId() == R.id.user_detail_user_level) {
             presenter.showUserInfo(userDetailBean, false, this);
-        }
-        if (view.getId() == R.id.user_detail_user_sign) {
-            if (userId == SharePrefUtil.getUid(this)) {
-                presenter.showModifySignDialog(userDetailBean.sign, this);
-            } else {
-                presenter.showUserSignDialog(userDetailBean.sign, this);
-            }
         }
         if (view.getId() == R.id.user_detail_followed_num) {
             Bundle bundle = new Bundle();
@@ -244,21 +221,6 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
             UserFriendFragment.getInstance(bundle)
                     .show(getSupportFragmentManager(), TimeUtil.getStringMs());
         }
-        if (view.getId() == R.id.user_detail_visitor_num) {
-            Bundle bundle = new Bundle();
-            bundle.putString(Constant.IntentKey.USER_NAME, userDetailBean.name);
-            bundle.putInt(Constant.IntentKey.USER_ID, userId);
-            bundle.putSerializable(Constant.IntentKey.DATA_1, (Serializable) visitorsBeans);
-            UserVisitorFragment.getInstance(bundle).show(getSupportFragmentManager(), TimeUtil.getStringMs());
-        }
-        if (view.getId() == R.id.user_detail_friend_num) {
-            Bundle bundle = new Bundle();
-            bundle.putInt(Constant.IntentKey.USER_ID, userId);
-            bundle.putString(Constant.IntentKey.USER_NAME, userDetailBean.name);
-            bundle.putString(Constant.IntentKey.TYPE, UserFriendType.TYPE_FRIEND);
-            UserFriendFragment.getInstance(bundle)
-                    .show(getSupportFragmentManager(), TimeUtil.getStringMs());
-        }
         if (view.getId() == R.id.user_detail_user_icon) {
             if (userId == SharePrefUtil.getUid(this)) {
                 startActivity(new Intent(this, ModifyAvatarActivity.class));
@@ -272,9 +234,7 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
 
     @Override
     public void onGetSpaceByNameSuccess(int uid) {
-        presenter.getUserDetail(uid, this);
-        presenter.getUserSpace(uid, this);
-        presenter.getUserFriend(uid, UserFriendType.TYPE_FRIEND, this);
+        // 已废弃，不再使用旧API
     }
 
     @Override
@@ -303,26 +263,6 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
         toolbar.setTitle(userDetailBean.name);
 
         if (userId != SharePrefUtil.getUid(this)) setBlackStatus();
-
-
-        if (userDetailBean.body.creditList.size() >= 3) {
-            shuidiNum.setText(String.valueOf(userDetailBean.body.creditList.get(2).data));
-            jifenNum.setText(String.valueOf(userDetailBean.body.creditList.get(0).data));
-        }
-
-        if (userDetailBean.gender == 0) {  //保密
-            userGender.setText("保密");
-            userGender.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#83C6C2")));
-            userSign.setText(TextUtils.isEmpty(userDetailBean.sign) ? "Ta还未设置签名" : userDetailBean.sign);
-        } else if (userDetailBean.gender == 1) {  //男
-            userGender.setText("♂");
-            userGender.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#5A93D6")));
-            userSign.setText(TextUtils.isEmpty(userDetailBean.sign) ? "他还未设置签名" : userDetailBean.sign);
-        } else if (userDetailBean.gender == 2) { //女
-            userGender.setText("♀");
-            userGender.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9D54AA")));
-            userSign.setText(TextUtils.isEmpty(userDetailBean.sign) ? "她还未设置签名" : userDetailBean.sign);
-        }
 
         if (!TextUtils.isEmpty(userDetailBean.userTitle)) {
             Matcher matcher = Pattern.compile("(.*?)\\((Lv\\..*)\\)").matcher(userDetailBean.userTitle);
@@ -408,7 +348,6 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
 
     @Override
     public void onModifySignSuccess(ModifySignBean modifySignBean, String sign) {
-        userSign.setText(sign);
         userDetailBean.sign = sign;
         showToast(modifySignBean.head.errInfo, ToastType.TYPE_SUCCESS);
     }
@@ -432,8 +371,6 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
     public void onGetUserSpaceSuccess(List<VisitorsBean> visitorsBeans, List<String> medalImages) {
         this.visitorsBeans = visitorsBeans;
 
-        visitorNum.setText("访客：" + visitorsBeans.size());
-
         if (medalImages == null || medalImages.size() == 0) {
             userMedalRv.setVisibility(View.GONE);
         } else {
@@ -455,9 +392,6 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
 
     @Override
     public void onGetUserFriendSuccess(UserFriendBean userFriendBean) {
-        if (userFriendBean != null && userFriendBean.list != null) {
-            friendNum.setText("好友：" + userFriendBean.list.size());
-        }
     }
 
     @Override

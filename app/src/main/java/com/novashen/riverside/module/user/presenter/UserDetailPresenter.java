@@ -24,6 +24,9 @@ import com.novashen.riverside.entity.UserFriendBean;
 import com.novashen.riverside.entity.VisitorsBean;
 import com.novashen.riverside.helper.ExceptionHelper;
 import com.novashen.riverside.helper.rxhelper.Observer;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserSummaryResponse;
+import com.novashen.riverside.module.user.model.DiscourseUserModel;
 import com.novashen.riverside.module.user.model.UserModel;
 import com.novashen.riverside.module.user.view.ModifyAvatarActivity;
 import com.novashen.riverside.module.user.view.UserDetailView;
@@ -52,6 +55,7 @@ import io.reactivex.disposables.Disposable;
 public class UserDetailPresenter extends BasePresenter<UserDetailView> {
 
     private UserModel userModel = new UserModel();
+    private DiscourseUserModel discourseUserModel = new DiscourseUserModel();
 
     public void getUidByName(String name) {
         userModel.getUserSpaceByName(name, new Observer<String>() {
@@ -114,6 +118,151 @@ public class UserDetailPresenter extends BasePresenter<UserDetailView> {
 //                        SubscriptionManager.getInstance().add(d);
             }
         });
+    }
+
+    /**
+     * 使用Discourse API获取用户详情
+     * @param username 用户名
+     * @param context 上下文
+     */
+    public void getDiscourseUserDetail(String username, Context context) {
+        // 先获取用户基本信息
+        discourseUserModel.getUserInfo(username, new Observer<DiscourseUserResponse>() {
+            @Override
+            public void OnSuccess(DiscourseUserResponse response) {
+                if (response != null && response.getUser() != null) {
+                    // 将Discourse用户信息转换为UserDetailBean
+                    UserDetailBean userDetailBean = convertToUserDetailBean(response);
+
+                    // Process medals
+                    List<String> medalImages = new ArrayList<>();
+                    if (response.getUser().getUserBadges() != null) {
+                        for (DiscourseUserResponse.UserBadge userBadge : response.getUser().getUserBadges()) {
+                            if (userBadge.getBadge() != null) {
+                                String img = userBadge.getBadge().getImageUrl();
+                                if (!TextUtils.isEmpty(img)) {
+                                     if (!img.startsWith("http")) {
+                                         img = "https://river-side.cc" + (img.startsWith("/") ? "" : "/") + img;
+                                     }
+                                     medalImages.add(img);
+                                }
+                            }
+                        }
+                    }
+                    view.onGetUserSpaceSuccess(new ArrayList<>(), medalImages);
+
+                    // 再获取用户摘要信息（包含帖子数和回复数）
+                    discourseUserModel.getUserSummary(username, new Observer<DiscourseUserSummaryResponse>() {
+                        @Override
+                        public void OnSuccess(DiscourseUserSummaryResponse summaryResponse) {
+                            if (summaryResponse != null && summaryResponse.getUserSummary() != null) {
+                                // 更新帖子数和回复数
+                                DiscourseUserSummaryResponse.UserSummary summary = summaryResponse.getUserSummary();
+                                userDetailBean.topic_num = summary.getTopicCount();
+                                userDetailBean.reply_posts_num = summary.getPostCount();
+                            }
+                            view.onGetUserDetailSuccess(userDetailBean);
+                        }
+
+                        @Override
+                        public void onError(ExceptionHelper.ResponseThrowable e) {
+                            // 即使获取摘要失败，也显示基本信息
+                            view.onGetUserDetailSuccess(userDetailBean);
+                        }
+
+                        @Override
+                        public void OnCompleted() {
+
+                        }
+
+                        @Override
+                        public void OnDisposable(Disposable d) {
+                            disposable.add(d);
+                        }
+                    });
+                } else {
+                    view.onGetUserDetailError("用户信息为空");
+                }
+            }
+
+            @Override
+            public void onError(ExceptionHelper.ResponseThrowable e) {
+                view.onGetUserDetailError(e.message);
+            }
+
+            @Override
+            public void OnCompleted() {
+
+            }
+
+            @Override
+            public void OnDisposable(Disposable d) {
+                disposable.add(d);
+            }
+        });
+    }
+
+    /**
+     * 将Discourse用户响应转换为UserDetailBean
+     */
+    private UserDetailBean convertToUserDetailBean(DiscourseUserResponse response) {
+        UserDetailBean bean = new UserDetailBean();
+        DiscourseUserResponse.User user = response.getUser();
+
+        bean.rs = ApiConstant.Code.SUCCESS_CODE;
+        bean.name = user.getUsername();
+        bean.icon = user.getAvatarUrl(240); // 使用240px的头像
+        bean.userTitle = user.getTitle() != null ? user.getTitle() : "Lv." + user.getTrustLevel();
+        bean.level = user.getTrustLevel();
+        bean.sign = user.getBioRaw();
+
+        // 使用Discourse的关注和粉丝数据
+        bean.friend_num = user.getTotalFollowing();
+        bean.follow_num = user.getTotalFollowers();
+
+        // Prepare profile list
+        bean.body = new UserDetailBean.BodyBean();
+        bean.body.profileList = new ArrayList<>();
+
+        if (user.getCreatedAt() != null) {
+            UserDetailBean.BodyBean.ProfileListBean profile = new UserDetailBean.BodyBean.ProfileListBean();
+            profile.type = "text_start"; // Assuming "text_start" or similar is used for plain text
+            profile.title = "加入时间";
+            profile.data = formatDate(user.getCreatedAt());
+            bean.body.profileList.add(profile);
+        }
+
+        if (user.getLastSeenAt() != null) {
+            UserDetailBean.BodyBean.ProfileListBean profile = new UserDetailBean.BodyBean.ProfileListBean();
+            profile.type = "text_start";
+            profile.title = "最后登录";
+            profile.data = formatDate(user.getLastSeenAt());
+            bean.body.profileList.add(profile);
+        }
+
+        if (user.getLocation() != null) {
+             UserDetailBean.BodyBean.ProfileListBean profile = new UserDetailBean.BodyBean.ProfileListBean();
+             profile.type = "text_start";
+             profile.title = "位置";
+             profile.data = user.getLocation();
+             bean.body.profileList.add(profile);
+        }
+
+        if (user.getWebsite() != null) {
+             UserDetailBean.BodyBean.ProfileListBean profile = new UserDetailBean.BodyBean.ProfileListBean();
+             profile.type = "text_start";
+             profile.title = "网站";
+             profile.data = user.getWebsite();
+             bean.body.profileList.add(profile);
+        }
+
+        // 初始化其他字段为默认值
+        bean.is_black = 0;
+        bean.is_follow = 0;
+        bean.topic_num = 0;
+        bean.reply_posts_num = 0;
+
+        return bean;
     }
 
     public void followUser(int uid, String type, Context context) {
@@ -468,6 +617,21 @@ public class UserDetailPresenter extends BasePresenter<UserDetailView> {
             });
         });
         dialog.show();
+    }
+
+    private String formatDate(String isoDate) {
+        if (TextUtils.isEmpty(isoDate)) return "";
+        try {
+             String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat(pattern, java.util.Locale.US);
+             inputFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+             java.util.Date date = inputFormat.parse(isoDate);
+             
+             java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+             return outputFormat.format(date);
+        } catch (Exception e) {
+             return isoDate;
+        }
     }
 
 }

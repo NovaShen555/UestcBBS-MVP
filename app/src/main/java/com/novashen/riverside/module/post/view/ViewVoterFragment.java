@@ -101,6 +101,7 @@ public class ViewVoterFragment extends BaseDialogFragment implements ViewVoterVi
             if (view1.getId() == R.id.avatar) {
                 Intent intent = new Intent(mActivity, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, viewVoterAdapter.getData().get(position).uid);
+                intent.putExtra(Constant.IntentKey.USER_NAME, viewVoterAdapter.getData().get(position).name);
                 startActivity(intent);
             }
         });

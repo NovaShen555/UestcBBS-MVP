@@ -96,6 +96,7 @@ public class UserVisitorFragment extends BaseBottomFragment implements UserVisit
             if (view1.getId() == R.id.item_user_visitor_root_layout) {
                 Intent intent = new Intent(mActivity, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, userVisitorAdapter.getData().get(position).visitorUid);
+                intent.putExtra(Constant.IntentKey.USER_NAME, userVisitorAdapter.getData().get(position).visitorName);
                 startActivity(intent);
             }
         });

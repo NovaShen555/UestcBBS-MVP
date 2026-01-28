@@ -75,6 +75,7 @@ class SearchActivity : BaseVBActivity<SearchPresenter, SearchView, ActivitySearc
         searchPostAdapter.setOnItemChildClickListener { adapter, view, position ->
             val intent = Intent(this@SearchActivity, UserDetailActivity::class.java).apply {
                 putExtra(Constant.IntentKey.USER_ID, searchPostAdapter.data[position].user_id)
+                putExtra(Constant.IntentKey.USER_NAME, searchPostAdapter.data[position].user_nick_name)
             }
             startActivity(intent)
         }
@@ -82,6 +83,7 @@ class SearchActivity : BaseVBActivity<SearchPresenter, SearchView, ActivitySearc
         searchUserAdapter.setOnItemClickListener { adapter, view, position ->
             val intent = Intent(this@SearchActivity, UserDetailActivity::class.java).apply {
                 putExtra(Constant.IntentKey.USER_ID, searchUserAdapter.data[position].uid)
+                putExtra(Constant.IntentKey.USER_NAME, searchUserAdapter.data[position].name)
             }
             startActivity(intent)
         }

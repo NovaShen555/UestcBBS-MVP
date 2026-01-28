@@ -108,6 +108,7 @@ public class UserFriendFragment extends BaseBottomFragment implements UserFriend
             if (view1.getId() == R.id.item_user_friend_root_layout) {
                 Intent intent = new Intent(mActivity, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, userFriendAdapter.getData().get(position).uid);
+                intent.putExtra(Constant.IntentKey.USER_NAME, userFriendAdapter.getData().get(position).name);
                 startActivity(intent);
             }
         });

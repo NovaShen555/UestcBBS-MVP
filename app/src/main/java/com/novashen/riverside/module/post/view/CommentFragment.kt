@@ -136,6 +136,7 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
             if (view.id == R.id.reply_avatar) {
                 val intent = Intent(context, UserDetailActivity::class.java).apply {
                     putExtra(Constant.IntentKey.USER_ID, commentAdapter.data[position].reply_id)
+                    putExtra(Constant.IntentKey.USER_NAME, commentAdapter.data[position].reply_name)
                 }
                 startActivity(intent)
             }

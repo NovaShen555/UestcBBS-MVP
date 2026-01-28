@@ -1,5 +1,6 @@
 package com.novashen.riverside.api.discourse.converter;
 
+import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
 import com.novashen.riverside.entity.CommonPostBean;
 
@@ -20,6 +21,38 @@ import java.util.TimeZone;
 public class DiscourseDataConverter {
 
     private static final String BASE_URL = "https://river-side.cc";
+
+    public static CommonPostBean convertUserActionsToCommonPostBean(DiscourseUserActionResponse response) {
+        CommonPostBean bean = new CommonPostBean();
+        bean.list = new ArrayList<>();
+        
+        if (response != null && response.getUserActions() != null) {
+            for (DiscourseUserActionResponse.UserAction action : response.getUserActions()) {
+                 CommonPostBean.ListBean item = new CommonPostBean.ListBean();
+                 item.title = action.getTitle();
+                 item.subject = action.getExcerpt(); // Use excerpt as subject/content preview
+                 item.user_nick_name = action.getUsername(); // Action user
+                 item.user_id = action.getUserId();
+                 item.userAvatar = action.getAvatarUrl(120);
+                 item.last_reply_date = String.valueOf(parseTime(action.getCreatedAt()));
+                 item.topic_id = action.getTopicId();
+                 item.reply_content = action.getExcerpt();
+                 
+                 // If action type is 5 (Reply), maybe set some flag or specific ui
+                 item.type = "reply"; // custom type or reuse existing
+                 item.board_name = "回复";
+
+                 bean.list.add(item);
+            }
+            bean.rs = 1; 
+            bean.page = 1;
+            bean.has_next = 1; // Simplify paging
+            bean.total_num = bean.list.size();
+        } else {
+             bean.rs = 0;
+        }
+        return bean;
+    }
 
     /**
      * 将 TopicListResponse 转换为 CommonPostBean
@@ -140,14 +173,12 @@ public class DiscourseDataConverter {
     }
 
     /**
-     * 格式化日期
-     * 将 ISO 8601 格式转换为时间戳字符串
+     * Parse ISO Time to timestamp long
      */
-    private static String formatDate(String isoDate) {
+    private static long parseTime(String isoDate) {
         if (isoDate == null || isoDate.isEmpty()) {
-            return String.valueOf(System.currentTimeMillis());
+            return System.currentTimeMillis();
         }
-
         try {
             // ISO 8601 格式: 2026-01-25T07:49:18.496Z
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
@@ -155,11 +186,19 @@ public class DiscourseDataConverter {
             Date date = isoFormat.parse(isoDate);
 
             // 返回时间戳（毫秒）
-            return String.valueOf(date.getTime());
+            return date.getTime();
         } catch (ParseException e) {
             e.printStackTrace();
-            return String.valueOf(System.currentTimeMillis());
+            return System.currentTimeMillis();
         }
+    }
+
+    /**
+     * 格式化日期
+     * 将 ISO 8601 格式转换为时间戳字符串
+     */
+    private static String formatDate(String isoDate) {
+        return String.valueOf(parseTime(isoDate));
     }
 
     /**

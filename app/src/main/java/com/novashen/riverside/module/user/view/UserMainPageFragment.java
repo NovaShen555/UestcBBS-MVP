@@ -25,6 +25,7 @@ public class UserMainPageFragment extends BaseFragment implements UserMainPageVi
     UserMainPagePresenter userMainPagePresenter;
 
     int uid;
+    String username;
 
     public static UserMainPageFragment getInstance(Bundle bundle) {
         UserMainPageFragment userMainPageFragment = new UserMainPageFragment();
@@ -37,6 +38,7 @@ public class UserMainPageFragment extends BaseFragment implements UserMainPageVi
         super.getBundle(bundle);
         if (bundle != null) {
             uid = bundle.getInt(Constant.IntentKey.USER_ID, Integer.MAX_VALUE);
+            username = bundle.getString(Constant.IntentKey.USER_NAME);
         }
     }
 
@@ -60,7 +62,11 @@ public class UserMainPageFragment extends BaseFragment implements UserMainPageVi
 
         moreInfoLayout.setOnClickListener(this);
 
-        userMainPagePresenter.getUserSpace(uid, mActivity);
+        if (username != null && !username.isEmpty()) {
+             userMainPagePresenter.getDiscourseUserSpace(username, mActivity);
+        } else {
+             userMainPagePresenter.getUserSpace(uid, mActivity);
+        }
     }
 
     @Override
@@ -76,9 +82,8 @@ public class UserMainPageFragment extends BaseFragment implements UserMainPageVi
     }
 
     @Override
-    public void onGetUserSpaceSuccess(boolean isOnline, String onLineTime, String registerTime, String lastLoginTime, String ipLocation) {
-        isOnlineTv.setText(isOnline ? "在线" : "离线");
-        isOnlineTv.setTextColor(isOnline ? Color.parseColor("#00B4E7") : Color.parseColor("#BC6363"));
+    public void onGetUserSpaceSuccess(String onLineTime, String registerTime, String lastLoginTime, String ipLocation) {
+        if (isOnlineTv != null) isOnlineTv.setVisibility(View.GONE);
         onLineTimeTv.setText(onLineTime);
 
         LastLoginTv.setText(TimeUtil.formatTime(TimeUtil.getMilliSecond(lastLoginTime, "yyyy-MM-dd HH:mm") + "", R.string.post_time1, mActivity));

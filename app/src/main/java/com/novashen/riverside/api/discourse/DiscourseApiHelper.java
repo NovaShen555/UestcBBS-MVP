@@ -1,6 +1,7 @@
 package com.novashen.riverside.api.discourse;
 
 import com.novashen.riverside.api.discourse.converter.DiscourseDataConverter;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
 import com.novashen.riverside.entity.CommonPostBean;
 
@@ -57,5 +58,25 @@ public class DiscourseApiHelper {
      */
     public Observable<TopicListResponse> getNewTopics() {
         return apiService.getNewTopics();
+    }
+
+    public Observable<CommonPostBean> getUserTopicsAsCommonPost(String username) {
+        return apiService.getUserTopics(username)
+                .map(new Function<TopicListResponse, CommonPostBean>() {
+                    @Override
+                    public CommonPostBean apply(TopicListResponse response) throws Exception {
+                        return DiscourseDataConverter.convertToCommonPostBean(response);
+                    }
+                });
+    }
+
+    public Observable<CommonPostBean> getUserActionsAsCommonPost(String username, int offset) {
+         return apiService.getUserActions(offset, username, 5)
+                 .map(new Function<DiscourseUserActionResponse, CommonPostBean>() {
+                    @Override
+                    public CommonPostBean apply(DiscourseUserActionResponse response) throws Exception {
+                         return DiscourseDataConverter.convertUserActionsToCommonPostBean(response);
+                    }
+                 });
     }
 }

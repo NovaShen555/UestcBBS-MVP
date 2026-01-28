@@ -105,6 +105,7 @@ public class CommonPostBean {
         public List<?> verify;
         public String distance;
         public String location;
+        public String reply_content;
         public List<ReplyBean> reply;
 
         public static class ReplyBean {

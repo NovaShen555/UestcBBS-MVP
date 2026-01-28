@@ -128,6 +128,13 @@ public class MineFragment extends BaseFragment implements MineView {
             String icon = SharePrefUtil.getAvatar(mActivity);
             String name = SharePrefUtil.getName(mActivity);
             userName.setText(name);
+            
+            // Fix Discourse avatar URL
+            if (icon != null && icon.contains("{size}")) {
+                icon = icon.replace("{size}", "240");
+            }
+            icon = com.novashen.riverside.api.discourse.converter.DiscourseDataConverter.getFullImageUrl(icon);
+            
             Glide.with(mActivity).load(icon).into(userIcon);
             exitRl.setVisibility(View.VISIBLE);
         } else {

@@ -199,6 +199,7 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
             if (view1.getId() == R.id.avatar) {
                 Intent intent = new Intent(mActivity, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, homeAdapter.getData().get(position).user_id);
+                intent.putExtra(Constant.IntentKey.USER_NAME, homeAdapter.getData().get(position).user_nick_name);
                 startActivity(intent);
             }
             if (view1.getId() == R.id.content_layout) {

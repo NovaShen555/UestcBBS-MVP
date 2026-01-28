@@ -26,6 +26,7 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
 
     private var mType: String = TYPE_BOARD_POST
     private var mUid: Int = Int.MAX_VALUE
+    private var mUsername: String? = null // Add username field
     private var mPage: Int = 1
     private var mNoMoreData = false
     private lateinit var commonPostAdapter: CommonPostAdapter
@@ -48,6 +49,9 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
         // 如果是最新回复类型，使用 Discourse Presenter
         return if (mType == TYPE_NEW_REPLY_POST) {
             DiscourseCommonPostPresenter(this)
+        } else if (mType == TYPE_USER_POST || mType == TYPE_USER_REPLY) {
+             // For user detail lists
+             CommonPostPresenter() 
         } else {
             CommonPostPresenter()
         }
@@ -84,6 +88,13 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
     override fun getBundle(bundle: Bundle?) {
         mType = bundle?.getString(Constant.IntentKey.TYPE, TYPE_BOARD_POST)?: TYPE_BOARD_POST
         mUid = bundle?.getInt(Constant.IntentKey.USER_ID, Int.MAX_VALUE)?: Int.MAX_VALUE
+        // Try to get username from bundle, if not there, maybe we can fetch it or it's current user
+        mUsername = bundle?.getString(Constant.IntentKey.USER_NAME)
+        
+        // If username is null but uid is current user, get from pref
+        if (mUsername.isNullOrEmpty() && mUid == SharePrefUtil.getUid(context)) {
+            mUsername = SharePrefUtil.getDiscourseUsername(context)
+        }
     }
 
     override fun initView() {
@@ -104,10 +115,18 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
     override fun lazyLoad() {
         when(mType) {
             TYPE_USER_POST -> {
-                mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "topic")
+                if (!mUsername.isNullOrEmpty()) {
+                    mPresenter?.userPostDiscourse(mUsername!!, TYPE_USER_POST, mPage)
+                } else {
+                    mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "topic")
+                }
             }
             TYPE_USER_REPLY -> {
-                mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "reply")
+                 if (!mUsername.isNullOrEmpty()) {
+                    mPresenter?.userPostDiscourse(mUsername!!, TYPE_USER_REPLY, mPage)
+                } else {
+                    mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "reply")
+                }
             }
             TYPE_USER_FAVORITE -> {
                 mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "favorite")
@@ -156,6 +175,7 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
             if (view.id == R.id.avatar) {
                 val intent = Intent(context, UserDetailActivity::class.java).apply {
                     putExtra(Constant.IntentKey.USER_ID, commonPostAdapter.data[position].user_id)
+                    putExtra(Constant.IntentKey.USER_NAME, commonPostAdapter.data[position].user_nick_name)
                 }
                 startActivity(intent)
             }

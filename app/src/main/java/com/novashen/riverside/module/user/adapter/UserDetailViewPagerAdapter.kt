@@ -11,7 +11,7 @@ import com.novashen.riverside.util.Constant
 /**
  * Created by sca_tl at 2023/6/2 9:26
  */
-class UserDetailViewPagerAdapter(fragmentActivity: FragmentActivity, uid: Int) : FragmentStateAdapter(fragmentActivity) {
+class UserDetailViewPagerAdapter(fragmentActivity: FragmentActivity, uid: Int, var username: String? = null) : FragmentStateAdapter(fragmentActivity) {
 
     private val fragments = mutableListOf<Fragment>()
 
@@ -19,16 +19,19 @@ class UserDetailViewPagerAdapter(fragmentActivity: FragmentActivity, uid: Int) :
 
         fragments.add(UserMainPageFragment.getInstance(Bundle().apply {
             putInt(Constant.IntentKey.USER_ID, uid)
+            putString(Constant.IntentKey.USER_NAME, username)
         }))
 
         fragments.add(CommonPostFragment.getInstance(Bundle().apply {
             putString(Constant.IntentKey.TYPE, CommonPostFragment.TYPE_USER_POST)
             putInt(Constant.IntentKey.USER_ID, uid)
+            putString(Constant.IntentKey.USER_NAME, username)
         }))
 
         fragments.add(CommonPostFragment.getInstance(Bundle().apply {
             putString(Constant.IntentKey.TYPE, CommonPostFragment.TYPE_USER_REPLY)
             putInt(Constant.IntentKey.USER_ID, uid)
+            putString(Constant.IntentKey.USER_NAME, username)
         }))
 
         fragments.add(CommonPostFragment.getInstance(Bundle().apply {

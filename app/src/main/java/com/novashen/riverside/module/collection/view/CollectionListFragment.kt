@@ -116,6 +116,7 @@ class CollectionListFragment: BaseVBFragment<CollectionListPresenter, Collection
             if (view.id == R.id.avatar || view.id == R.id.author_name) {
                 val intent = Intent(context, UserDetailActivity::class.java).apply {
                     putExtra(Constant.IntentKey.USER_ID, collectionListAdapter.data[position].authorId)
+                    putExtra(Constant.IntentKey.USER_NAME, collectionListAdapter.data[position].authorName)
                 }
                 startActivity(intent)
             }

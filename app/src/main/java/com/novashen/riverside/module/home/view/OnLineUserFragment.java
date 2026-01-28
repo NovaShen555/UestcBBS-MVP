@@ -69,6 +69,7 @@ public class OnLineUserFragment extends BaseBottomFragment implements OnLineUser
         onLineUserAdapter.setOnItemClickListener((adapter, view, position) -> {
             Intent intent = new Intent(mActivity, UserDetailActivity.class);
             intent.putExtra(Constant.IntentKey.USER_ID, onLineUserAdapter.getData().get(position).uid);
+            intent.putExtra(Constant.IntentKey.USER_NAME, onLineUserAdapter.getData().get(position).userName);
             startActivity(intent);
         });
     }

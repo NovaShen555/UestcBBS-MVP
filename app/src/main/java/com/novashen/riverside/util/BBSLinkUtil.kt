@@ -26,6 +26,7 @@ object BBSLinkUtil {
             }
             "space" -> {
                 val uid = params["uid"]
+                val username = params["username"]
                 val `do` = params["do"]
                 val view = params["view"]
                 if (uid.isNullOrEmpty()) {
@@ -41,6 +42,7 @@ object BBSLinkUtil {
                 } else {
                     linkInfo.apply {
                         id = NumberUtil.parseInt(params["uid"])
+                        this.username = username
                         type = LinkInfo.LinkType.USER_SPACE
                     }
                 }
@@ -142,6 +144,7 @@ object BBSLinkUtil {
     class LinkInfo {
         var id: Int = 0
         var pid: Int = 0
+        var username: String? = null
         var type: LinkType = LinkType.TOPIC
 
         enum class LinkType {

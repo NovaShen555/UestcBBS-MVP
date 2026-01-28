@@ -136,6 +136,7 @@ public class BoardPostFragment extends BaseFragment implements BoardPostView{
             if (view.getId() == R.id.avatar) {
                 Intent intent = new Intent(mActivity, UserDetailActivity.class);
                 intent.putExtra(Constant.IntentKey.USER_ID, boardPostAdapter.getData().get(position).user_id);
+                intent.putExtra(Constant.IntentKey.USER_NAME, boardPostAdapter.getData().get(position).user_nick_name);
                 startActivity(intent);
             }
             if (view.getId() == R.id.content_layout) {

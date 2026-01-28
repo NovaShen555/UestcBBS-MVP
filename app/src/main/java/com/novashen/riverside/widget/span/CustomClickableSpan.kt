@@ -124,6 +124,7 @@ class CustomClickableSpan(): ClickableSpan() {
             BBSLinkUtil.LinkInfo.LinkType.USER_SPACE -> {
                 val intent = Intent(mContext, UserDetailActivity::class.java).apply {
                     putExtra(Constant.IntentKey.USER_ID, linkInfo.id)
+                    putExtra(Constant.IntentKey.USER_NAME, linkInfo.username)
                 }
                 mContext?.startActivity(intent)
             }
