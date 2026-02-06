@@ -16,8 +16,11 @@ import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -48,6 +51,22 @@ public class RetrofitUtil {
         //添加公共参数
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .dns(new OkHttpDns())
+                .addInterceptor(chain -> {
+                    Request request = chain.request();
+                    String host = request.url().host();
+                    if ("bbs.uestc.edu.cn".equalsIgnoreCase(host)) {
+                        String url = request.url().toString();
+                        String body = "{\"msg\":\"还未支持该功能\",\"url\":\"" + url + "\"}";
+                        return new Response.Builder()
+                                .request(request)
+                                .protocol(Protocol.HTTP_1_1)
+                                .code(400)
+                                .message("还未支持该功能")
+                                .body(ResponseBody.create(MediaType.parse("application/json; charset=utf-8"), body))
+                                .build();
+                    }
+                    return chain.proceed(request);
+                })
                 .addInterceptor(chain -> {
                     Request request = chain.request();
                     if (!request.url().toString().contains("r=user/login")) {
