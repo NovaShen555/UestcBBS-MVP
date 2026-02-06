@@ -52,12 +52,13 @@ public class UserMainPagePresenter extends BasePresenter<UserMainPageView> {
                         public void OnSuccess(DiscourseUserSummaryResponse summaryResponse) {
                             String onlineTime = "0分钟";
                             if (summaryResponse != null && summaryResponse.getUserSummary() != null) {
-                                int minutes = summaryResponse.getUserSummary().getTimeRead();
-                                // User instruction: unit is minutes
-                                if (minutes < 60) {
-                                    onlineTime = minutes + "分钟";
+                                int seconds = summaryResponse.getUserSummary().getTimeRead();
+                                if (seconds < 60) {
+                                    onlineTime = seconds + "秒";
+                                } else if (seconds < 3600) {
+                                    onlineTime = (seconds / 60) + "分钟";
                                 } else {
-                                    onlineTime = (minutes / 60) + "小时" + (minutes % 60) + "分钟";
+                                    onlineTime = (seconds / 3600) + "小时" + ((seconds % 3600) / 60) + "分钟";
                                 }
                             }
                             if (view != null) {

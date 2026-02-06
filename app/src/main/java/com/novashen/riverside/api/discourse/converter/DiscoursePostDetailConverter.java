@@ -212,31 +212,34 @@ public class DiscoursePostDetailConverter {
 
         try {
             Document doc = Jsoup.parse(html);
-            Elements elements = doc.body().children();
 
-            for (Element element : elements) {
-                // 处理图片
-                Elements images = element.select("img");
-                for (Element img : images) {
-                    String src = img.attr("src");
-                    if (src != null && !src.isEmpty()) {
-                        PostDetailBean.TopicBean.ContentBean content = new PostDetailBean.TopicBean.ContentBean();
-                        content.type = 1; // 图片类型
-                        content.infor = src.startsWith("http") ? src : DISCOURSE_BASE_URL + src;
-                        content.originalInfo = content.infor;
-                        contentList.add(content);
+            // 使用 lightbox 原图地址替换缩略图地址
+            for (Element wrapper : doc.select("div.lightbox-wrapper")) {
+                Element link = wrapper.selectFirst("a.lightbox");
+                Element img = wrapper.selectFirst("img");
+                if (link != null && img != null) {
+                    String original = link.attr("href");
+                    if (original != null && !original.isEmpty()) {
+                        img.attr("src", original);
                     }
+                    img.removeAttr("width");
+                    img.removeAttr("height");
                 }
+            }
 
-                // 处理文本
-                String text = element.text();
-                if (text != null && !text.trim().isEmpty()) {
-                    PostDetailBean.TopicBean.ContentBean content = new PostDetailBean.TopicBean.ContentBean();
-                    content.type = 0; // 文本类型
-                    content.infor = text;
-                    content.originalInfo = text;
-                    contentList.add(content);
-                }
+            // 移除 lightbox 元信息，避免出现文件名/尺寸的纯文本
+            doc.select("div.lightbox-wrapper div.meta").remove();
+            doc.select("svg").remove();
+            doc.select("span.filename").remove();
+            doc.select("span.informations").remove();
+
+            String processedHtml = doc.body().html();
+            if (!processedHtml.trim().isEmpty()) {
+                PostDetailBean.TopicBean.ContentBean content = new PostDetailBean.TopicBean.ContentBean();
+                content.type = 0; // 文本类型（HTML）
+                content.infor = processedHtml;
+                content.originalInfo = processedHtml;
+                contentList.add(content);
             }
 
             // 如果没有解析到任何内容，添加原始 HTML 作为文本
@@ -278,39 +281,37 @@ public class DiscoursePostDetailConverter {
         try {
             Document doc = Jsoup.parse(html);
 
-            // 处理图片：添加尺寸信息
+            // 使用 lightbox 原图地址替换缩略图地址
+            for (Element wrapper : doc.select("div.lightbox-wrapper")) {
+                Element link = wrapper.selectFirst("a.lightbox");
+                Element img = wrapper.selectFirst("img");
+                if (link != null && img != null) {
+                    String original = link.attr("href");
+                    if (original != null && !original.isEmpty()) {
+                        img.attr("src", original);
+                    }
+                    img.removeAttr("width");
+                    img.removeAttr("height");
+                }
+            }
+
+            // 处理图片：补全地址
             Elements images = doc.select("img");
             for (Element img : images) {
                 String src = img.attr("src");
-                if (src != null && !src.isEmpty()) {
-                    // 确保图片 URL 是完整的
-                    if (!src.startsWith("http")) {
-                        src = DISCOURSE_BASE_URL + src;
-                        img.attr("src", src);
-                    }
-
-                    // 获取图片的原始尺寸（如果有）
-                    String width = img.attr("width");
-                    String height = img.attr("height");
-
-                    // 如果没有尺寸信息，或者尺寸很小（可能是表情包），添加标记
-                    if (width.isEmpty() || height.isEmpty()) {
-                        // 没有尺寸信息，保持原样
-                    } else {
-                        int w = Integer.parseInt(width);
-                        int h = Integer.parseInt(height);
-
-                        // 如果是小图（表情包），添加 class 标记
-                        if (w <= 100 && h <= 100) {
-                            img.addClass("emoji");
-                        }
-                    }
+                if (src != null && !src.isEmpty() && !src.startsWith("http")) {
+                    img.attr("src", DISCOURSE_BASE_URL + src);
                 }
             }
 
             // 移除引用块（Discourse 的 aside.quote）
-            Elements quotes = doc.select("aside.quote");
-            quotes.remove();
+            doc.select("aside.quote").remove();
+
+            // 移除 lightbox 元信息
+            doc.select("div.lightbox-wrapper div.meta").remove();
+            doc.select("svg").remove();
+            doc.select("span.filename").remove();
+            doc.select("span.informations").remove();
 
             // 获取处理后的 HTML
             String processedHtml = doc.body().html();

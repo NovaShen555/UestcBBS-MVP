@@ -269,7 +269,7 @@ public class TopicListResponse {
         private int perPage;
 
         @SerializedName("top_tags")
-        private List<String> topTags;
+        private List<TopTag> topTags;
 
         @SerializedName("topics")
         private List<Topic> topics;
@@ -298,11 +298,11 @@ public class TopicListResponse {
             this.perPage = perPage;
         }
 
-        public List<String> getTopTags() {
+        public List<TopTag> getTopTags() {
             return topTags;
         }
 
-        public void setTopTags(List<String> topTags) {
+        public void setTopTags(List<TopTag> topTags) {
             this.topTags = topTags;
         }
 
@@ -312,6 +312,44 @@ public class TopicListResponse {
 
         public void setTopics(List<Topic> topics) {
             this.topics = topics;
+        }
+    }
+
+    /**
+     * 置顶标签信息
+     */
+    public static class TopTag {
+        @SerializedName("id")
+        private int id;
+
+        @SerializedName("name")
+        private String name;
+
+        @SerializedName("slug")
+        private String slug;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getSlug() {
+            return slug;
+        }
+
+        public void setSlug(String slug) {
+            this.slug = slug;
         }
     }
 

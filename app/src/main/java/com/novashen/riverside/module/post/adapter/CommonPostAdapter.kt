@@ -6,11 +6,14 @@ import android.graphics.Rect
 import android.graphics.drawable.VectorDrawable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
 import com.chad.library.adapter.base.BaseViewHolder
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.novashen.riverside.R
 import com.novashen.riverside.entity.CommonPostBean
 import com.novashen.riverside.manager.BlackListManager
@@ -52,6 +55,7 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
         val time = helper.getView<TextView>(R.id.time)
         val title = helper.getView<TextView>(R.id.title)
         val content = helper.getView<TextView>(R.id.content)
+        val tagGroup = helper.getView<ChipGroup>(R.id.tag_group)
         val boardName = helper.getView<TextView>(R.id.board_name)
         val imageLayout = helper.getView<NineGridLayout>(R.id.image_layout)
         val supportCount = helper.getView<TextView>(R.id.support_count)
@@ -113,8 +117,9 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
         }
 
 
+        val hotPrefix = if (item.hot == 1) "🔥 " else ""
         if (item.vote == 1) {
-            val spannableStringBuilder = SpannableStringBuilder("I" + item.title)
+            val spannableStringBuilder = SpannableStringBuilder("I" + hotPrefix + item.title)
             val drawable = AppCompatResources.getDrawable(mContext, R.drawable.ic_vote)
             if (drawable is VectorDrawable) {
                 drawable.setTint(ColorUtil.getAttrColor(mContext, R.attr.colorPrimary))
@@ -128,7 +133,7 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
             }
             title.text = spannableStringBuilder
         } else {
-            title.text = item.title
+            title.text = hotPrefix + item.title
         }
 
         if (type == CommonPostFragment.TYPE_HOT_POST) {
@@ -137,7 +142,37 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
             time.text = TimeUtil.formatTime(item.last_reply_date.toString(), R.string.reply_time, mContext)
         }
 
+        bindTags(tagGroup, item.tags)
         setImages(item, imageLayout, hideContent)
+    }
+
+    private fun bindTags(tagGroup: ChipGroup, tags: List<String>?) {
+        tagGroup.removeAllViews()
+        if (tags.isNullOrEmpty()) {
+            tagGroup.visibility = View.GONE
+            return
+        }
+
+        tagGroup.visibility = View.VISIBLE
+        val safeTags = tags.orEmpty()
+        safeTags.forEach { tag ->
+            if (tag.isBlank()) return@forEach
+            val chip = Chip(ContextThemeWrapper(mContext, R.style.Widget_Material3_Chip_Filter)).apply {
+                text = tag
+                isCheckable = false
+                isClickable = false
+                isCloseIconVisible = false
+                chipStrokeWidth = 0f
+                setChipBackgroundColorResource(R.color.chip_bg_color)
+                setTextColor(ColorUtil.getAttrColor(mContext, R.attr.colorOnSurface))
+                textSize = 11f
+                setEnsureMinTouchTargetSize(false)
+                chipMinHeight = ScreenUtil.dip2pxF(mContext, 20f)
+                chipStartPadding = ScreenUtil.dip2pxF(mContext, 6f)
+                chipEndPadding = ScreenUtil.dip2pxF(mContext, 6f)
+            }
+            tagGroup.addView(chip)
+        }
     }
 
     private fun setImages(item: CommonPostBean.ListBean, imageLayout: NineGridLayout, hideContent: Boolean?) {

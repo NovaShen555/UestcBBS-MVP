@@ -9,13 +9,21 @@ import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.UnderlineSpan
+import android.text.style.URLSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.net.Uri
+import android.text.Html
+import android.graphics.Color
+import android.app.Dialog
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -33,6 +41,7 @@ import com.novashen.riverside.util.*
 import com.novashen.riverside.widget.span.CustomClickableSpan
 import com.novashen.riverside.widget.textview.EmojiTextView
 import com.novashen.util.ColorUtil
+import com.novashen.util.ScreenUtil
 import com.novashen.widget.audioplay.AudioPlayService
 import com.novashen.widget.audioplay.AudioPlayer
 import com.novashen.widget.download.DownloadManager
@@ -47,6 +56,10 @@ class PostContentAdapter(val mContext: Context,
                          val topicId: Int,
                          val onVoteClick: ((ids: MutableList<Int>) -> Unit)?) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        private const val TAG = "PostContentAdapter"
+    }
 
     var data: List<ContentViewBean> = mutableListOf()
         set(value) {
@@ -213,6 +226,22 @@ class PostContentAdapter(val mContext: Context,
 
     private fun setText(holder: TextViewHolder, position: Int) {
         var textData = mData[position].infor
+        val decodedText = decodeHtmlEntities(textData)
+
+        Log.d(TAG, "setText position=$position raw=${safeLog(textData)}")
+        Log.d(TAG, "setText position=$position decoded=${safeLog(decodedText)}")
+
+        val oneboxResult = extractOnebox(decodedText)
+        if (oneboxResult != null) {
+            Log.d(TAG, "onebox found url=${oneboxResult.first.url} site=${oneboxResult.first.site} title=${oneboxResult.first.title}")
+            bindOnebox(holder, oneboxResult.first)
+            textData = oneboxResult.second
+        } else {
+            Log.d(TAG, "onebox not found")
+            holder.oneboxCard.visibility = View.GONE
+            holder.oneboxCard.setOnClickListener(null)
+            textData = decodedText
+        }
 
         val modifyMatcher = Pattern.compile("本帖最后由(.*?)于(.*?)编辑").matcher(textData)
         if (modifyMatcher.find()) {
@@ -235,6 +264,17 @@ class PostContentAdapter(val mContext: Context,
             } while (textData.startsWith("\r\n"))
         }
 
+        textData = normalizeCooked(textData)
+        Log.d(TAG, "normalized text=${safeLog(textData)}")
+
+        if (textData.isBlank()) {
+            holder.text.text = ""
+            holder.text.visibility = View.GONE
+            return
+        } else {
+            holder.text.visibility = View.VISIBLE
+        }
+
         // 检查是否包含 HTML 标签（特别是 img 标签）
         if (textData.contains("<img") || textData.contains("<p>") || textData.contains("<br>")) {
             // 使用 Html.fromHtml 渲染 HTML 内容，支持图文混排
@@ -253,12 +293,36 @@ class PostContentAdapter(val mContext: Context,
                 val start = spannableString.getSpanStart(span)
                 val end = spannableString.getSpanEnd(span)
                 val flags = spannableString.getSpanFlags(span)
+                val drawable = span.drawable
+                val isSmall = drawable != null && drawable.bounds.height() <= holder.text.textSize * 1.6f
 
+                if (isSmall) {
+                    spannableString.removeSpan(span)
+                    spannableString.setSpan(VerticalImageSpan(drawable), start, end, flags)
+                }
+            }
+
+            val urlSpans = spannableString.getSpans(0, spannableString.length, URLSpan::class.java)
+            for (span in urlSpans) {
+                val start = spannableString.getSpanStart(span)
+                val end = spannableString.getSpanEnd(span)
+                val flags = spannableString.getSpanFlags(span)
                 spannableString.removeSpan(span)
-                spannableString.setSpan(VerticalImageSpan(span.drawable), start, end, flags)
+                val url = span.url
+                spannableString.setSpan(object : ClickableSpan() {
+                    override fun onClick(widget: View) {
+                        if (isImageUrl(url)) {
+                            showImagePreview(url)
+                        } else {
+                            openUrl(url)
+                        }
+                    }
+                }, start, end, flags)
             }
 
             holder.text.text = spannableString
+            holder.text.movementMethod = LinkMovementMethod.getInstance()
+            holder.text.highlightColor = Color.TRANSPARENT
         } else {
             // 纯文本，直接设置
             textData = textData.replace("\r\n", "<br>")
@@ -279,6 +343,152 @@ class PostContentAdapter(val mContext: Context,
                 true
             }
         }
+    }
+
+    private data class OneboxInfo(
+        val url: String,
+        val site: String?,
+        val title: String?,
+        val desc: String?,
+        val iconUrl: String?
+    )
+
+    private fun extractOnebox(html: String): Pair<OneboxInfo, String>? {
+        Log.d(TAG, "extractOnebox input=${safeLog(html)}")
+        val asideRegex = Regex("(?is)<aside[^>]*class=['\"][^'\"]*onebox[^'\"]*['\"][^>]*>.*?</aside>")
+        val match = asideRegex.find(html) ?: return null
+        val asideHtml = match.value
+
+        Log.d(TAG, "extractOnebox aside=${safeLog(asideHtml)}")
+
+        val url = Regex("data-onebox-src=\"([^\"]+)\"").find(asideHtml)?.groupValues?.get(1)
+            ?: Regex("<a[^>]*href=\"([^\"]+)\"").find(asideHtml)?.groupValues?.get(1)
+            ?: return null
+
+        val iconUrl = Regex("<img[^>]*class=\"site-icon\"[^>]*src=\"([^\"]+)\"")
+            .find(asideHtml)?.groupValues?.get(1)
+        val site = Regex("<header[^>]*>.*?<a[^>]*>(.*?)</a>.*?</header>")
+            .find(asideHtml)?.groupValues?.get(1)
+        val title = Regex("<h3>\\s*<a[^>]*>(.*?)</a>\\s*</h3>")
+            .find(asideHtml)?.groupValues?.get(1)
+        val desc = Regex("<p>(.*?)</p>").find(asideHtml)?.groupValues?.get(1)
+
+        val cleaned = html.replace(asideRegex, "").trim()
+        Log.d(TAG, "extractOnebox cleaned=${safeLog(cleaned)}")
+        return OneboxInfo(
+            url = url,
+            site = decodeHtml(site),
+            title = decodeHtml(title),
+            desc = decodeHtml(desc),
+            iconUrl = iconUrl
+        ) to cleaned
+    }
+
+    private fun decodeHtml(text: String?): String? {
+        if (text.isNullOrEmpty()) return text
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString().trim()
+        } else {
+            @Suppress("DEPRECATION")
+            Html.fromHtml(text).toString().trim()
+        }
+    }
+
+    private fun decodeHtmlEntities(text: String): String {
+        var result = text
+        if (!result.contains("&")) return result
+        result = result.replace("&amp;", "&")
+        result = result.replace("&lt;", "<")
+        result = result.replace("&gt;", ">")
+        result = result.replace("&quot;", "\"")
+        result = result.replace("&#39;", "'")
+        return result
+    }
+
+    private fun normalizeCooked(text: String): String {
+        var result = text.trim()
+        if (result.isEmpty()) return result
+        result = result.replace(Regex("(?is)</p>\\s*<p>"), "<br>")
+        result = result.replace(Regex("(?is)^\\s*<p>(.*)</p>\\s*$", RegexOption.DOT_MATCHES_ALL), "$1")
+        // remove leading/trailing empty paragraphs
+        result = result.replace(Regex("(?is)^\\s*(<p>(?:\\s|&nbsp;|<br\\s*/?>)*</p>)+"), "").trim()
+        result = result.replace(Regex("(?is)(<p>(?:\\s|&nbsp;|<br\\s*/?>)*</p>)+\\s*$"), "").trim()
+        // remove stray leading/trailing p tags
+        result = result.replace(Regex("(?is)^\\s*</p>"), "").trim()
+        result = result.replace(Regex("(?is)^\\s*<p>\\s*"), "").trim()
+        result = result.replace(Regex("(?is)</p>\\s*$"), "").trim()
+        result = result.replace(Regex("(?is)<p>\\s*$"), "").trim()
+        result = result.replace(Regex("(?i)(<br\\s*/?>\\s*)+$"), "").trim()
+        return result
+    }
+
+    private fun safeLog(text: String?): String {
+        if (text.isNullOrEmpty()) return "<empty>"
+        val max = 2000
+        return if (text.length > max) text.substring(0, max) + "...(${text.length})" else text
+    }
+
+    private fun bindOnebox(holder: TextViewHolder, info: OneboxInfo) {
+        holder.oneboxCard.visibility = View.VISIBLE
+        holder.oneboxSite.text = info.site ?: info.url
+        holder.oneboxTitle.text = info.title ?: info.url
+        val desc = info.desc ?: ""
+        if (desc.isBlank()) {
+            holder.oneboxDesc.visibility = View.GONE
+        } else {
+            holder.oneboxDesc.visibility = View.VISIBLE
+            holder.oneboxDesc.text = desc
+        }
+        com.bumptech.glide.Glide.with(mContext)
+            .load(info.iconUrl)
+            .placeholder(R.drawable.ic_internet)
+            .error(R.drawable.ic_internet)
+            .into(holder.oneboxIcon)
+        holder.oneboxCard.setOnClickListener {
+            openUrl(info.url)
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            mContext.startActivity(intent)
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun showImagePreview(url: String) {
+        try {
+            val dialog = Dialog(mContext, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+            val container = FrameLayout(mContext)
+            container.setBackgroundColor(Color.parseColor("#CC000000"))
+            val imageView = ImageView(mContext)
+            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+            val padding = ScreenUtil.dip2px(mContext, 16f)
+            imageView.setPadding(padding, padding, padding, padding)
+            container.addView(
+                imageView,
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            )
+            container.setOnClickListener { dialog.dismiss() }
+            dialog.setContentView(container)
+            dialog.setCancelable(true)
+            com.bumptech.glide.Glide.with(mContext)
+                .load(url)
+                .placeholder(R.drawable.ic_photo)
+                .error(R.drawable.ic_photo)
+                .into(imageView)
+            dialog.show()
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun isImageUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val u = url.lowercase()
+        return u.endsWith(".jpg") || u.endsWith(".jpeg") || u.endsWith(".png") ||
+            u.endsWith(".gif") || u.endsWith(".webp") || u.endsWith(".bmp") ||
+            u.contains("/uploads/")
     }
 
     private fun setAttachment(holder: AttachmentViewHolder, position: Int) {
@@ -407,6 +617,11 @@ class PostContentAdapter(val mContext: Context,
         val text: EmojiTextView = itemView.findViewById(R.id.text)
         val modifyCard: MaterialCardView = itemView.findViewById(R.id.modify_card)
         val modifyText: TextView = itemView.findViewById(R.id.modify_text)
+        val oneboxCard: MaterialCardView = itemView.findViewById(R.id.onebox_card)
+        val oneboxIcon: ImageView = itemView.findViewById(R.id.onebox_icon)
+        val oneboxSite: TextView = itemView.findViewById(R.id.onebox_site)
+        val oneboxTitle: TextView = itemView.findViewById(R.id.onebox_title)
+        val oneboxDesc: TextView = itemView.findViewById(R.id.onebox_desc)
     }
 
     class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -470,8 +685,9 @@ class HtmlImageGetter(private val textView: TextView, private val context: Conte
 
                     // 获取屏幕宽度
                     val screenWidth = context.resources.displayMetrics.widthPixels
-                    val maxWidth = (screenWidth * 0.9).toInt()
-                    val maxHeight = (screenWidth * 0.9).toInt()
+                    val textWidth = if (textView.width > 0) textView.width else screenWidth
+                    val maxWidth = (textWidth * 0.98).toInt()
+                    val maxHeight = (textWidth * 2.2).toInt()
 
                     val imageWidth = resource.width
                     val imageHeight = resource.height

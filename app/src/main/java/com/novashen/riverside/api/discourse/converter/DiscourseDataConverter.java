@@ -141,7 +141,11 @@ public class DiscourseDataConverter {
         // 状态标记
         topic.top = discourseTopic.isPinned() ? 1 : 0;
         topic.essence = discourseTopic.isHot() ? 1 : 0;
+        topic.hot = discourseTopic.isHot() ? 1 : 0;
         topic.status = 1; // 默认正常状态
+
+        // 标签
+        topic.tags = discourseTopic.getTags();
 
         return topic;
     }

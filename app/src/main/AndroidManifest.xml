@@ -90,6 +90,9 @@
             android:name="com.novashen.riverside.module.account.view.AccountManageActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity
+            android:name="com.novashen.riverside.module.message.view.ChannelChatActivity"
+            android:configChanges="orientation|screenSize|screenLayout" />
+        <activity
             android:name="com.novashen.riverside.module.message.view.PrivateChatActivity"
             android:configChanges="orientation|screenSize|screenLayout" />
         <activity

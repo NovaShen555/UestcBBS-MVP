@@ -29,7 +29,7 @@ class MessageFragment: BaseVBFragment<MessagePresenter, MessageView, FragmentMes
 
     override fun initView() {
         super.initView()
-        val titles = arrayOf("私信", "回复", "提到", "点评", "系统")
+        val titles = arrayOf("频道", "私信", "回复", "提到", "系统")
         mBinding.viewpager.apply {
             offscreenPageLimit = titles.size
             adapter = MsgPagerAdapter(context as FragmentActivity)
@@ -39,6 +39,8 @@ class MessageFragment: BaseVBFragment<MessagePresenter, MessageView, FragmentMes
         TabLayoutMediator(mBinding.tabLayout, mBinding.viewpager) { tab, position ->
             tab.text = titles[position]
         }.attach()
+
+        mBinding.viewpager.setCurrentItem(0, false)
 
         setBadge()
     }
@@ -61,26 +63,26 @@ class MessageFragment: BaseVBFragment<MessagePresenter, MessageView, FragmentMes
     private fun setBadge() {
         mBinding.tabLayout.getTabAt(0)?.orCreateBadge?.apply {
             horizontalOffset = -5
+            number = MessageManager.INSTANCE.dianPingUnreadCount
+            isVisible = MessageManager.INSTANCE.dianPingUnreadCount != 0
+        }
+
+        mBinding.tabLayout.getTabAt(1)?.orCreateBadge?.apply {
+            horizontalOffset = -5
             number = MessageManager.INSTANCE.pmUnreadCount
             isVisible = MessageManager.INSTANCE.pmUnreadCount != 0
         }
 
-        mBinding.tabLayout.getTabAt(1)?.orCreateBadge?.apply {
+        mBinding.tabLayout.getTabAt(2)?.orCreateBadge?.apply {
             horizontalOffset = -5
             number = MessageManager.INSTANCE.replyUnreadCount
             isVisible = MessageManager.INSTANCE.replyUnreadCount != 0
         }
 
-        mBinding.tabLayout.getTabAt(2)?.orCreateBadge?.apply {
+        mBinding.tabLayout.getTabAt(3)?.orCreateBadge?.apply {
             horizontalOffset = -5
             number = MessageManager.INSTANCE.atUnreadCount
             isVisible = MessageManager.INSTANCE.atUnreadCount != 0
-        }
-
-        mBinding.tabLayout.getTabAt(3)?.orCreateBadge?.apply {
-            horizontalOffset = -5
-            number = MessageManager.INSTANCE.dianPingUnreadCount
-            isVisible = MessageManager.INSTANCE.dianPingUnreadCount != 0
         }
 
         mBinding.tabLayout.getTabAt(4)?.orCreateBadge?.apply {

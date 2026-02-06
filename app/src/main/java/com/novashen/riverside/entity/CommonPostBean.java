@@ -101,6 +101,7 @@ public class CommonPostBean {
         public int special;
         public int isHasRecommendAdd;
         public String sourceWebUrl;
+        public List<String> tags;
         public List<String> imageList;
         public List<?> verify;
         public String distance;

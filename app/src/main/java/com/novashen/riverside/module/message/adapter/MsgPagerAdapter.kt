@@ -5,6 +5,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.novashen.riverside.module.message.view.AtMeMsgFragment
 import com.novashen.riverside.module.message.view.DianPingMsgFragment
+import com.novashen.riverside.module.message.view.ChannelListFragment
 import com.novashen.riverside.module.message.view.PrivateMsgFragment
 import com.novashen.riverside.module.message.view.ReplyMeMsgFragment
 import com.novashen.riverside.module.message.view.SystemMsgFragment
@@ -18,10 +19,10 @@ class MsgPagerAdapter(fragmentActivity: FragmentActivity, ) : FragmentStateAdapt
 
     init {
         fragments.apply {
+            add(ChannelListFragment.getInstance(null))
             add(PrivateMsgFragment.getInstance(null))
             add(ReplyMeMsgFragment.getInstance(null))
             add(AtMeMsgFragment.getInstance(null))
-            add(DianPingMsgFragment.getInstance(null))
             add(SystemMsgFragment.getInstance(null))
         }
     }

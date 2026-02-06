@@ -11,6 +11,8 @@ import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
 import com.novashen.riverside.api.discourse.entity.LoginResponse;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
+import com.novashen.riverside.api.discourse.entity.ChatChannelsResponse;
+import com.novashen.riverside.api.discourse.entity.ChatMessagesResponse;
 
 import io.reactivex.Observable;
 import okhttp3.ResponseBody;
@@ -21,6 +23,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 /**
  * Discourse API 接口定义
@@ -124,5 +127,47 @@ public interface DiscourseApiService {
         @retrofit2.http.Query("offset") int offset,
         @retrofit2.http.Query("username") String username,
         @retrofit2.http.Query("filter") int filter
+    );
+
+    /**
+     * Get Chat Channels
+     */
+    @GET("chat/api/channels")
+    Observable<ChatChannelsResponse> getChatChannels(@Query("limit") int limit, @Query("filter") String filter, @Query("status") String status);
+
+    /**
+     * Get Chat Messages
+     */
+    @GET("chat/api/channels/{channel_id}/messages")
+    Observable<ChatMessagesResponse> getChatMessages(@Path("channel_id") int channelId, @Query("page_size") int pageSize, @Query("fetch_from_last_read") Boolean fetchFromLastRead);
+
+    /**
+     * Get Latest Chat Messages (no extra params)
+     */
+    @GET("chat/api/channels/{channel_id}/messages")
+    Observable<ChatMessagesResponse> getChatMessagesLatest(@Path("channel_id") int channelId, @Query("page_size") int pageSize);
+
+    /**
+     * Get Chat Messages (Historical)
+     */
+    @GET("chat/api/channels/{channel_id}/messages")
+    Observable<ChatMessagesResponse> getChatMessagesHistory(@Path("channel_id") int channelId, @Query("page_size") int pageSize, @Query("direction") String direction, @Query("target_message_id") int targetMessageId);
+
+    /**
+     * Mark as read
+     */
+    @POST("chat/api/channels/{channel_id}/read")
+    Observable<ResponseBody> markChatRead(@Path("channel_id") int channelId, @Query("message_id") int messageId);
+
+    /**
+     * Send chat message
+     */
+    @FormUrlEncoded
+    @POST("chat/{channel_id}")
+    Observable<ResponseBody> sendChatMessage(
+            @Path("channel_id") int channelId,
+            @Field("message") String message,
+            @Field("staged_id") String stagedId,
+            @Field("client_created_at") String clientCreatedAt
     );
 }
