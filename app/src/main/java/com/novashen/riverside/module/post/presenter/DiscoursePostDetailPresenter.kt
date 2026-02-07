@@ -7,6 +7,8 @@ import com.novashen.riverside.helper.ExceptionHelper.ResponseThrowable
 import com.novashen.riverside.helper.rxhelper.Observer
 import com.novashen.riverside.module.post.model.DiscoursePostModel
 import io.reactivex.disposables.Disposable
+import okhttp3.ResponseBody
+import org.json.JSONObject
 
 /**
  * Discourse 帖子详情 Presenter
@@ -97,6 +99,70 @@ class DiscoursePostDetailPresenter : NewPostDetailPresenter() {
             val number = matchResult.groupValues[2]
             val convertedLetter = if (letter == "a") "s" else letter
             ":$convertedLetter$number:"
+        }
+    }
+
+    override fun support(tid: Int, pid: Int, type: String, action: String) {
+        val reactionId = if (action == "support") "+1" else "-1"
+        discoursePostModel.toggleReaction(pid, reactionId, object : Observer<ResponseBody>() {
+            override fun OnSuccess(responseBody: ResponseBody) {
+                mView?.onSupportSuccess(action, reactionId)
+            }
+
+            override fun onError(e: ResponseThrowable) {
+                mView?.onSupportError(e.message)
+            }
+
+            override fun OnCompleted() {}
+
+            override fun OnDisposable(d: Disposable) {
+                mCompositeDisposable?.add(d)
+            }
+        })
+    }
+
+    override fun bookmark(postId: Int, bookmarked: Boolean, bookmarkId: Int) {
+        if (bookmarked) {
+            if (bookmarkId <= 0) {
+                mView?.onBookmarkError("未找到书签ID")
+                return
+            }
+            discoursePostModel.deleteBookmark(bookmarkId, object : Observer<ResponseBody>() {
+                override fun OnSuccess(responseBody: ResponseBody) {
+                    mView?.onBookmarkSuccess(false, 0)
+                }
+
+                override fun onError(e: ResponseThrowable) {
+                    mView?.onBookmarkError(e.message)
+                }
+
+                override fun OnCompleted() {}
+
+                override fun OnDisposable(d: Disposable) {
+                    mCompositeDisposable?.add(d)
+                }
+            })
+        } else {
+            discoursePostModel.createBookmark(postId, object : Observer<ResponseBody>() {
+                override fun OnSuccess(responseBody: ResponseBody) {
+                    var id = 0
+                    try {
+                        val json = JSONObject(responseBody.string())
+                        id = json.optInt("id", 0)
+                    } catch (_: Exception) { }
+                    mView?.onBookmarkSuccess(true, id)
+                }
+
+                override fun onError(e: ResponseThrowable) {
+                    mView?.onBookmarkError(e.message)
+                }
+
+                override fun OnCompleted() {}
+
+                override fun OnDisposable(d: Disposable) {
+                    mCompositeDisposable?.add(d)
+                }
+            })
         }
     }
 }

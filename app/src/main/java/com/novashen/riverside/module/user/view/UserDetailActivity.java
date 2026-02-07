@@ -153,7 +153,9 @@ public class UserDetailActivity extends BaseActivity<UserDetailPresenter> implem
         viewPager2.setAdapter(new UserDetailViewPagerAdapter(this, userId, userName));
         viewPager2.setCurrentItem(0, false);
 
-        final String[] titles = {"主页", "发表", "回复", "收藏"};
+        final String[] titles = userId == SharePrefUtil.getUid(this)
+            ? new String[]{"主页", "发表", "回复", "收藏"}
+            : new String[]{"主页", "发表", "回复", "点赞"};
 
         new TabLayoutMediator(tabLayout, viewPager2, (tab, position) ->
                 tab.setText(titles[position])

@@ -131,6 +131,9 @@ public class TopicDetailResponse {
 
         public boolean bookmarked;
 
+        @SerializedName("bookmark_id")
+        public Integer bookmarkId;
+
         @SerializedName("actions_summary")
         public List<ActionSummary> actionsSummary;
 
@@ -160,7 +163,7 @@ public class TopicDetailResponse {
         public List<Reaction> reactions;
 
         @SerializedName("current_user_reaction")
-        public String currentUserReaction;
+        public Reaction currentUserReaction;
 
         @SerializedName("reaction_users_count")
         public int reactionUsersCount;
@@ -181,6 +184,9 @@ public class TopicDetailResponse {
         public String id;
         public String type;
         public int count;
+
+        @SerializedName("can_undo")
+        public boolean canUndo;
     }
 
     public static class ReplyToUser {

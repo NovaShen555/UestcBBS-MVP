@@ -7,6 +7,7 @@ import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.entity.PostDetailBean;
 import com.novashen.riverside.helper.ExceptionHelper;
 import com.novashen.riverside.helper.rxhelper.Observer;
+import okhttp3.ResponseBody;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -27,11 +28,18 @@ public class DiscoursePostModel {
                 .getApiService()
                 .getTopicDetail(topicId)
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .map(response -> {
+                android.util.Log.d("DiscoursePostModel", "Fetched topic detail, topicId=" + topicId
+                    + ", posts=" + (response.postStream != null && response.postStream.posts != null ? response.postStream.posts.size() : 0));
                     // 将 Discourse API 响应转换为 PostDetailBean
-                    return DiscoursePostDetailConverter.convert(response);
+                PostDetailBean bean = DiscoursePostDetailConverter.convert(response);
+                android.util.Log.d("DiscoursePostModel", "Converted PostDetailBean, listSize="
+                    + (bean.list != null ? bean.list.size() : 0)
+                    + ", supportCount=" + (bean.postWebBean != null ? bean.postWebBean.supportCount : -1)
+                    + ", againstCount=" + (bean.postWebBean != null ? bean.postWebBean.againstCount : -1));
+                return bean;
                 })
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new io.reactivex.Observer<PostDetailBean>() {
                     @Override
                     public void onSubscribe(io.reactivex.disposables.Disposable d) {
@@ -240,5 +248,35 @@ public class DiscoursePostModel {
                         observer.OnCompleted();
                     }
                 });
+    }
+
+    /**
+     * 切换反应（点赞/点踩）
+     */
+    public void toggleReaction(int postId, String reactionId, Observer<ResponseBody> observer) {
+        DiscourseRetrofitUtil.getInstance()
+                .getApiService()
+                .toggleReaction(postId, reactionId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(observer);
+    }
+
+    public void createBookmark(int postId, Observer<ResponseBody> observer) {
+        DiscourseRetrofitUtil.getInstance()
+                .getApiService()
+                .createBookmark("", 3, postId, "Post")
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(observer);
+    }
+
+    public void deleteBookmark(int bookmarkId, Observer<ResponseBody> observer) {
+        DiscourseRetrofitUtil.getInstance()
+                .getApiService()
+                .deleteBookmark(bookmarkId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(observer);
     }
 }

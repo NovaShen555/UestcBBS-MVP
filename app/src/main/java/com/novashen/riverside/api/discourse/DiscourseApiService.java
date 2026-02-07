@@ -8,6 +8,7 @@ import com.novashen.riverside.api.discourse.entity.CsrfTokenResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserSummaryResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserBookmarksResponse;
 import com.novashen.riverside.api.discourse.entity.LoginResponse;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
@@ -22,8 +23,10 @@ import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.DELETE;
 
 /**
  * Discourse API 接口定义
@@ -128,6 +131,30 @@ public interface DiscourseApiService {
         @retrofit2.http.Query("username") String username,
         @retrofit2.http.Query("filter") int filter
     );
+
+        @GET("u/{username}/bookmarks.json")
+        Observable<DiscourseUserBookmarksResponse> getUserBookmarks(
+                @Path("username") String username,
+                @Query("page") int page
+        );
+
+        @PUT("discourse-reactions/posts/{post_id}/custom-reactions/{reaction_id}/toggle.json")
+        Observable<ResponseBody> toggleReaction(
+                @Path("post_id") int postId,
+                @Path("reaction_id") String reactionId
+        );
+
+        @FormUrlEncoded
+        @POST("bookmarks.json")
+        Observable<ResponseBody> createBookmark(
+                @Field("reminder_at") String reminderAt,
+                @Field("auto_delete_preference") int autoDeletePreference,
+                @Field("bookmarkable_id") int bookmarkableId,
+                @Field("bookmarkable_type") String bookmarkableType
+        );
+
+        @DELETE("bookmarks/{bookmark_id}.json")
+        Observable<ResponseBody> deleteBookmark(@Path("bookmark_id") int bookmarkId);
 
     /**
      * Get Chat Channels

@@ -2,7 +2,6 @@ package com.novashen.riverside.module.post.view
 
 import com.novashen.riverside.base.BaseView
 import com.novashen.riverside.entity.PostDetailBean
-import com.novashen.riverside.entity.SupportResultBean
 
 /**
  * Created by sca_tl on 2023/1/13 9:36
@@ -11,7 +10,7 @@ interface CommentView: BaseView {
     fun onGetPostCommentSuccess(postDetailBean: PostDetailBean)
     fun onGetPostCommentError(msg: String?, code: Int)
     fun onAppendPost(replyPostsId: Int, tid: Int)
-    fun onSupportSuccess(supportResultBean: SupportResultBean, action: String, position: Int)
+    fun onSupportSuccess(action: String, position: Int)
     fun onSupportError(msg: String?)
     fun onPingFen(pid: Int)
     fun onOnlyReplyAuthor(uid: Int)

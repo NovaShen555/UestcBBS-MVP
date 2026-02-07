@@ -32,6 +32,7 @@ import com.novashen.riverside.module.post.presenter.CommentPresenter
 import com.novashen.riverside.module.user.view.UserDetailActivity
 import com.novashen.riverside.util.CommentUtil
 import com.novashen.riverside.util.Constant
+import com.novashen.riverside.util.SharePrefUtil
 import com.novashen.riverside.util.TimeUtil
 import com.novashen.riverside.util.isNullOrEmpty
 import com.novashen.riverside.util.showToast
@@ -351,13 +352,25 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
         PostAppendFragment.getInstance(bundle).show(childFragmentManager, TimeUtil.getStringMs())
     }
 
-    override fun onSupportSuccess(supportResultBean: SupportResultBean, action: String, position: Int) {
-        if (action == "support") {
-            showToast(supportResultBean.head.errInfo, ToastType.TYPE_SUCCESS)
-            commentAdapter.refreshNotifyItemChanged(position, PostCommentAdapter.UPDATE_SUPPORT)
-        } else {
-            showToast("踩+1", ToastType.TYPE_SUCCESS)
-        }
+    override fun onSupportSuccess(action: String, position: Int) {
+        val item = commentAdapter.data.getOrNull(position) ?: return
+        val reactionId = if (action == "support") "+1" else "-1"
+        val prev = SharePrefUtil.getPostReaction(context, item.reply_posts_id)
+        val newReaction = if (prev == reactionId) "" else reactionId
+
+        if (prev == "+1") item.supportedCount--
+        if (newReaction == "+1") item.supportedCount++
+
+        SharePrefUtil.setPostReaction(context, item.reply_posts_id, newReaction)
+
+        item.supportStatusFromServer = true
+        item.isSupported = newReaction == "+1"
+        item.isHotComment = item.supportedCount >= SharePrefUtil.getHotCommentZanThreshold(context)
+
+        commentAdapter.notifyItemChanged(position)
+
+        val tip = if (newReaction.isEmpty()) "已取消" else if (newReaction == "+1") "点赞成功" else "点踩成功"
+        showToast(tip, ToastType.TYPE_SUCCESS)
     }
 
     override fun onSupportError(msg: String?) {

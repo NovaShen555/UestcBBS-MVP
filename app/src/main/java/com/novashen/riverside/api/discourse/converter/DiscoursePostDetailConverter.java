@@ -3,6 +3,8 @@ package com.novashen.riverside.api.discourse.converter;
 import com.novashen.riverside.api.ApiConstant;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.entity.PostDetailBean;
+import com.novashen.riverside.entity.PostDianPingBean;
+import com.novashen.riverside.entity.PostWebBean;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -51,8 +53,45 @@ public class DiscoursePostDetailConverter {
         // 转换主题信息
         bean.topic = convertTopic(response, userMap);
 
+        // 使用 reactions 覆盖点赞/点踩数量（帖子主楼 posts[0]）
+        if (response.postStream != null && response.postStream.posts != null && !response.postStream.posts.isEmpty()) {
+            TopicDetailResponse.Post firstPost = response.postStream.posts.get(0);
+            int supportCount = getReactionCount(firstPost, "+1");
+            int againstCount = getReactionCount(firstPost, "-1");
+
+            logDebug("First post reactions: support=" + supportCount + ", against=" + againstCount
+                    + ", reactionsSize=" + (firstPost.reactions != null ? firstPost.reactions.size() : 0));
+
+            PostWebBean postWebBean = new PostWebBean();
+            postWebBean.supportCount = supportCount;
+            postWebBean.againstCount = againstCount;
+            boolean isBookmarked = firstPost.bookmarkId != null && firstPost.bookmarkId > 0;
+            postWebBean.favoriteNum = String.valueOf(isBookmarked ? 1 : 0);
+            postWebBean.formHash = "";
+            postWebBean.rewardInfo = "";
+            postWebBean.shengYuReword = "";
+            postWebBean.actionHistory = "";
+            postWebBean.modifyHistory = "";
+            postWebBean.originalCreate = false;
+            postWebBean.essence = false;
+            postWebBean.topStick = false;
+            postWebBean.isWarned = false;
+            postWebBean.collectionList = new ArrayList<>();
+            postWebBean.dianPingBean = new PostDianPingBean();
+            postWebBean.dianPingBean.list = new ArrayList<>();
+            postWebBean.dianPingBean.hasNext = false;
+            bean.postWebBean = postWebBean;
+
+            if (bean.topic != null) {
+                bean.topic.vote = supportCount;
+                bean.topic.currentUserReactionId = firstPost.currentUserReaction != null
+                        ? firstPost.currentUserReaction.id : null;
+            }
+        }
+
         // 转换回复列表
         bean.list = convertPosts(response.postStream.posts, userMap);
+        logDebug("Converted posts size=" + (bean.list != null ? bean.list.size() : 0));
 
         return bean;
     }
@@ -71,6 +110,7 @@ public class DiscoursePostDetailConverter {
             topic.title = response.title;
             topic.user_id = firstPost.userId;
             topic.user_nick_name = firstPost.username;
+            topic.reply_posts_id = firstPost.id;
             topic.replies = response.replyCount;
             topic.hits = response.views;
 
@@ -93,8 +133,10 @@ public class DiscoursePostDetailConverter {
 
             topic.userColor = "";
             topic.gender = 0; // Discourse 不提供性别信息
-            topic.is_favor = 0;
-            topic.favoriteNum = 0;
+            boolean isBookmarked = firstPost.bookmarkId != null && firstPost.bookmarkId > 0;
+            topic.is_favor = isBookmarked ? 1 : 0;
+            topic.favoriteNum = topic.is_favor;
+            topic.bookmarkId = isBookmarked ? firstPost.bookmarkId : 0;
             topic.isFollow = 0;
             topic.vote = response.likeCount;
 
@@ -182,17 +224,11 @@ public class DiscoursePostDetailConverter {
             // 解析回复内容
             reply.reply_content = parseReplyContent(post.cooked);
 
-            // 点赞信息
-            reply.isSupported = false;
-            reply.supportedCount = 0;
-            if (post.actionsSummary != null) {
-                for (TopicDetailResponse.ActionSummary action : post.actionsSummary) {
-                    if (action.id == 2) { // 2 表示点赞
-                        reply.supportedCount = action.count;
-                        break;
-                    }
-                }
-            }
+                // 点赞信息（仅使用 reactions）
+                reply.supportedCount = getReactionCount(post, "+1");
+                reply.supportStatusFromServer = post.currentUserReaction != null;
+                reply.isSupported = post.currentUserReaction != null
+                    && "+1".equals(post.currentUserReaction.id);
 
             list.add(reply);
         }
@@ -371,6 +407,18 @@ public class DiscoursePostDetailConverter {
         }
 
         return "";
+    }
+
+    private static int getReactionCount(TopicDetailResponse.Post post, String reactionId) {
+        if (post == null || post.reactions == null) {
+            return 0;
+        }
+        for (TopicDetailResponse.Reaction reaction : post.reactions) {
+            if (reaction != null && reactionId.equals(reaction.id)) {
+                return reaction.count;
+            }
+        }
+        return 0;
     }
 
     /**

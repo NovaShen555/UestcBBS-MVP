@@ -298,6 +298,23 @@ public class SharePrefUtil {
         return sharedPreferences.getBoolean(context.getString(R.string.ignore_ssl_verifier), false);
     }
 
+    public static void setPostReaction(Context context, int postId, String reactionId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        String key = "post_reaction_" + postId;
+        if (reactionId == null || reactionId.isEmpty()) {
+            editor.remove(key);
+        } else {
+            editor.putString(key, reactionId);
+        }
+        editor.apply();
+    }
+
+    public static String getPostReaction(Context context, int postId) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("post_reaction_" + postId, "");
+    }
+
     public static boolean clearDraftAfterPostSuccess(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(context.getString(R.string.clear_draft_after_post_success), true);

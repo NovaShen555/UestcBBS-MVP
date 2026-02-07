@@ -83,15 +83,15 @@ class PostDetailActivity: BaseVBActivity<NewPostDetailPresenter, NewPostDetailVi
 
     }
 
-    override fun onFavoritePostSuccess(favoritePostResultBean: FavoritePostResultBean) {
+    override fun onBookmarkSuccess(bookmarked: Boolean, bookmarkId: Int) {
 
     }
 
-    override fun onFavoritePostError(msg: String?) {
+    override fun onBookmarkError(msg: String?) {
 
     }
 
-    override fun onSupportSuccess(supportResultBean: SupportResultBean, action: String, type: String) {
+    override fun onSupportSuccess(action: String, reactionId: String) {
 
     }
 

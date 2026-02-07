@@ -2,6 +2,7 @@ package com.novashen.riverside.api.discourse;
 
 import com.novashen.riverside.api.discourse.converter.DiscourseDataConverter;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserBookmarksResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
 import com.novashen.riverside.entity.CommonPostBean;
 
@@ -71,12 +72,30 @@ public class DiscourseApiHelper {
     }
 
     public Observable<CommonPostBean> getUserActionsAsCommonPost(String username, int offset) {
-         return apiService.getUserActions(offset, username, 5)
-                 .map(new Function<DiscourseUserActionResponse, CommonPostBean>() {
+        return getUserActionsAsCommonPost(username, offset, 5);
+    }
+
+    public Observable<CommonPostBean> getUserActionsAsCommonPost(String username, int offset, int filter) {
+        return apiService.getUserActions(offset, username, filter)
+                .map(new Function<DiscourseUserActionResponse, CommonPostBean>() {
                     @Override
                     public CommonPostBean apply(DiscourseUserActionResponse response) throws Exception {
-                         return DiscourseDataConverter.convertUserActionsToCommonPostBean(response);
+                        return DiscourseDataConverter.convertUserActionsToCommonPostBean(response);
                     }
-                 });
+                });
+    }
+
+    public Observable<CommonPostBean> getUserLikesAsCommonPost(String username, int offset) {
+        return getUserActionsAsCommonPost(username, offset, 1);
+    }
+
+    public Observable<CommonPostBean> getUserBookmarksAsCommonPost(String username, int page) {
+        return apiService.getUserBookmarks(username, page)
+                .map(new Function<DiscourseUserBookmarksResponse, CommonPostBean>() {
+                    @Override
+                    public CommonPostBean apply(DiscourseUserBookmarksResponse response) throws Exception {
+                        return DiscourseDataConverter.convertBookmarksToCommonPostBean(response);
+                    }
+                });
     }
 }

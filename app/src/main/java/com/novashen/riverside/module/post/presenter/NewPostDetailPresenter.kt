@@ -2,12 +2,10 @@ package com.novashen.riverside.module.post.presenter
 
 import com.novashen.riverside.api.ApiConstant
 import com.novashen.riverside.base.BaseVBPresenter
-import com.novashen.riverside.entity.FavoritePostResultBean
 import com.novashen.riverside.entity.HistoryBean
 import com.novashen.riverside.entity.PostDetailBean
 import com.novashen.riverside.entity.PostDianPingBean
 import com.novashen.riverside.entity.PostWebBean
-import com.novashen.riverside.entity.SupportResultBean
 import com.novashen.riverside.entity.VoteResultBean
 import com.novashen.riverside.helper.ExceptionHelper.ResponseThrowable
 import com.novashen.riverside.helper.rxhelper.Observer
@@ -155,52 +153,12 @@ open class NewPostDetailPresenter: BaseVBPresenter<NewPostDetailView>() {
             })
     }
 
-    fun favorite(idType: String, action: String, id: Int) {
-        postModel.favorite(idType, action, id,
-            object : Observer<FavoritePostResultBean>() {
-                override fun OnSuccess(favoritePostResultBean: FavoritePostResultBean) {
-                    if (favoritePostResultBean.rs == ApiConstant.Code.SUCCESS_CODE) {
-                        mView?.onFavoritePostSuccess(favoritePostResultBean)
-                    }
-                    if (favoritePostResultBean.rs == ApiConstant.Code.ERROR_CODE) {
-                        mView?.onFavoritePostError(favoritePostResultBean.head.errInfo)
-                    }
-                }
-
-                override fun onError(e: ResponseThrowable) {
-                    mView?.onFavoritePostError(e.message)
-                }
-
-                override fun OnCompleted() {}
-
-                override fun OnDisposable(d: Disposable) {
-                    mCompositeDisposable?.add(d)
-                }
-            })
+    open fun bookmark(postId: Int, bookmarked: Boolean, bookmarkId: Int) {
+        mView?.onBookmarkError("已移除旧站点收藏逻辑")
     }
 
-    fun support(tid: Int, pid: Int, type: String, action: String) {
-        postModel.support(tid, pid, type, action,
-            object : Observer<SupportResultBean>() {
-                override fun OnSuccess(supportResultBean: SupportResultBean) {
-                    if (supportResultBean.rs == ApiConstant.Code.SUCCESS_CODE) {
-                        mView?.onSupportSuccess(supportResultBean, action, type)
-                    }
-                    if (supportResultBean.rs == ApiConstant.Code.ERROR_CODE) {
-                        mView?.onSupportError(supportResultBean.head.errInfo)
-                    }
-                }
-
-                override fun onError(e: ResponseThrowable) {
-                    mView?.onSupportError(e.message)
-                }
-
-                override fun OnCompleted() {}
-
-                override fun OnDisposable(d: Disposable) {
-                    mCompositeDisposable?.add(d)
-                }
-            })
+    open fun support(tid: Int, pid: Int, type: String, action: String) {
+        mView?.onSupportError("已移除旧站点点赞逻辑")
     }
 
     fun saveHistory(postDetailBean: PostDetailBean) {

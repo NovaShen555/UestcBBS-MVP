@@ -13,9 +13,9 @@ import com.novashen.riverside.api.ApiConstant
 import com.novashen.riverside.base.BaseVBPresenter
 import com.novashen.riverside.entity.AccountBean
 import com.novashen.riverside.entity.PostDetailBean
-import com.novashen.riverside.entity.SupportResultBean
 import com.novashen.riverside.helper.ExceptionHelper.ResponseThrowable
 import com.novashen.riverside.helper.rxhelper.Observer
+import com.novashen.riverside.module.post.model.DiscoursePostModel
 import com.novashen.riverside.module.post.model.PostModel
 import com.novashen.riverside.module.post.view.CommentView
 import com.novashen.riverside.module.report.ReportFragment
@@ -24,6 +24,7 @@ import com.novashen.riverside.util.Constant
 import com.novashen.riverside.util.SharePrefUtil
 import com.novashen.riverside.util.TimeUtil
 import io.reactivex.disposables.Disposable
+import okhttp3.ResponseBody
 import org.jsoup.Jsoup
 import org.litepal.LitePal
 
@@ -33,6 +34,7 @@ import org.litepal.LitePal
 class CommentPresenter: BaseVBPresenter<CommentView>() {
 
     private val postModel = PostModel()
+    private val discoursePostModel = DiscoursePostModel()
 
     /**
      * 获取刚刚发送的评论数据
@@ -70,15 +72,11 @@ class CommentPresenter: BaseVBPresenter<CommentView>() {
     }
 
     fun support(tid: Int, pid: Int, type: String, action: String, position: Int) {
-        postModel.support(tid, pid, type, action,
-            object : Observer<SupportResultBean>() {
-                override fun OnSuccess(supportResultBean: SupportResultBean) {
-                    if (supportResultBean.rs == ApiConstant.Code.SUCCESS_CODE) {
-                        mView?.onSupportSuccess(supportResultBean, action, position)
-                    }
-                    if (supportResultBean.rs == ApiConstant.Code.ERROR_CODE) {
-                        mView?.onSupportError(supportResultBean.head.errInfo)
-                    }
+        val reactionId = if (action == "support") "+1" else "-1"
+        discoursePostModel.toggleReaction(pid, reactionId,
+            object : Observer<ResponseBody>() {
+                override fun OnSuccess(responseBody: ResponseBody) {
+                    mView?.onSupportSuccess(action, position)
                 }
 
                 override fun onError(e: ResponseThrowable) {

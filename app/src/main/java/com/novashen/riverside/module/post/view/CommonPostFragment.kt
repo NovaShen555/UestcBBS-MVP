@@ -129,7 +129,13 @@ class CommonPostFragment: BaseVBFragment<CommonPostPresenter, CommonPostView, Fr
                 }
             }
             TYPE_USER_FAVORITE -> {
-                mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "favorite")
+                if (!mUsername.isNullOrEmpty() && mUid == SharePrefUtil.getUid(context)) {
+                    mPresenter?.userBookmarksDiscourse(mUsername!!, mPage)
+                } else if (!mUsername.isNullOrEmpty()) {
+                    mPresenter?.userLikesDiscourse(mUsername!!, mPage)
+                } else {
+                    mPresenter?.userPost(mPage, SharePrefUtil.getPageSize(context), mUid, "favorite")
+                }
             }
             TYPE_HOT_POST -> {
                 mPresenter?.getHotPostList(mPage, SharePrefUtil.getPageSize(context))

@@ -114,7 +114,9 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
     override fun onClick(v: View) {
         when(v) {
             mBinding.collectBtn -> {
-                mPresenter?.favorite("tid", if (postDetailBean?.topic?.is_favor == 1) "delfavorite" else "favorite", topicId)
+                val bookmarked = postDetailBean?.topic?.is_favor == 1
+                val bookmarkId = postDetailBean?.topic?.bookmarkId ?: 0
+                mPresenter?.bookmark(postId, bookmarked, bookmarkId)
             }
             mBinding.supportBtn -> {
                 v.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
@@ -302,6 +304,10 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
         }
 
         mPresenter?.saveHistory(postDetailBean)
+
+        if (!postDetailBean.topic.currentUserReactionId.isNullOrEmpty()) {
+            SharePrefUtil.setPostReaction(this, postId, postDetailBean.topic.currentUserReactionId)
+        }
 
         if (SharePrefUtil.getUid(this) == postDetailBean.topic.user_id) {
             mBinding.toolbar.menu.findItem(R.id.delete)?.isVisible = true
@@ -498,43 +504,53 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
         showToast(msg, ToastType.TYPE_ERROR)
     }
 
-    override fun onFavoritePostSuccess(favoritePostResultBean: FavoritePostResultBean) {
-        if (postDetailBean?.topic?.is_favor == 1) {
-            showToast("取消收藏成功", ToastType.TYPE_SUCCESS)
-            mBinding.collectBtn.setImageResource(R.drawable.ic_star_outline)
-            postDetailBean?.topic?.is_favor = 0
-        } else {
-            showToast("收藏成功", ToastType.TYPE_SUCCESS)
-            mBinding.collectBtn.setImageResource(R.drawable.ic_star_fill_1)
-            postDetailBean?.topic?.is_favor = 1
-            postDetailBean?.topic?.favoriteNum = (postDetailBean?.topic?.favoriteNum?:0) + 1
-            mBinding.collectNum.text = "${postDetailBean?.topic?.favoriteNum}收藏"
-        }
+    override fun onBookmarkSuccess(bookmarked: Boolean, bookmarkId: Int) {
+        postDetailBean?.topic?.is_favor = if (bookmarked) 1 else 0
+        postDetailBean?.topic?.favoriteNum = if (bookmarked) 1 else 0
+        postDetailBean?.topic?.bookmarkId = if (bookmarked) bookmarkId else 0
+        postDetailBean?.postWebBean?.favoriteNum = if (bookmarked) "1" else "0"
+
+        mBinding.collectBtn.setImageResource(if (bookmarked) R.drawable.ic_star_fill_1 else R.drawable.ic_star_outline)
+        mBinding.collectNum.text = "${if (bookmarked) 1 else 0}收藏"
+        showToast(if (bookmarked) "收藏成功" else "取消收藏成功", ToastType.TYPE_SUCCESS)
     }
 
-    override fun onFavoritePostError(msg: String?) {
+    override fun onBookmarkError(msg: String?) {
         showToast(msg, ToastType.TYPE_ERROR)
     }
 
-    override fun onSupportSuccess(supportResultBean: SupportResultBean, action: String, type: String) {
-        if (action == "support") {
-            if (type == "thread") {
-                mBinding.supportText.text = "${mBinding.voteView.getRightNum() + 1}人"
-                mBinding.voteView.plusNum(0, 1)
-            }
-            showToast("点赞成功", ToastType.TYPE_SUCCESS)
-        } else {
-            if (type == "thread") {
-                mBinding.againstText.text = "${mBinding.voteView.getLeftNum() + 1}人"
-                mBinding.voteView.plusNum(1, 0)
-            }
-            showToast("点踩成功", ToastType.TYPE_SUCCESS)
+    override fun onSupportSuccess(action: String, reactionId: String) {
+        val prev = SharePrefUtil.getPostReaction(this, postId)
+        val newReaction = if (prev == reactionId) "" else reactionId
+
+        val postWebBean = postDetailBean?.postWebBean
+        var supportCount = postWebBean?.supportCount ?: 0
+        var againstCount = postWebBean?.againstCount ?: 0
+
+        if (prev == "+1") supportCount--
+        if (prev == "-1") againstCount--
+        if (newReaction == "+1") supportCount++
+        if (newReaction == "-1") againstCount++
+
+        SharePrefUtil.setPostReaction(this, postId, newReaction)
+
+        if (postWebBean != null) {
+            postWebBean.supportCount = supportCount
+            postWebBean.againstCount = againstCount
         }
 
-        pingjiaCount ++
+        mBinding.voteView.setNum(againstCount, supportCount)
+        mBinding.voteView.setProgress(1f)
+        mBinding.supportText.text = "${supportCount}人"
+        mBinding.againstText.text = "${againstCount}人"
+
+        pingjiaCount = supportCount + againstCount
         mBinding.tabLayout.getTabAt(0)?.apply {
-            text = "评价(${pingjiaCount})"
+            text = if (pingjiaCount == 0) "评价" else "评价(${pingjiaCount})"
         }
+
+        val tip = if (newReaction.isEmpty()) "已取消" else if (newReaction == "+1") "点赞成功" else "点踩成功"
+        showToast(tip, ToastType.TYPE_SUCCESS)
     }
 
     override fun onSupportError(msg: String?) {

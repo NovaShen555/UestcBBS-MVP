@@ -99,6 +99,49 @@ open class CommonPostPresenter: BaseVBPresenter<CommonPostView>() {
              })
     }
 
+    fun userBookmarksDiscourse(username: String, page: Int) {
+        val pageIndex = (page - 1).coerceAtLeast(0)
+        discourseApiHelper.getUserBookmarksAsCommonPost(username, pageIndex)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : io.reactivex.Observer<CommonPostBean> {
+                override fun onSubscribe(d: Disposable) {
+                    mCompositeDisposable?.add(d)
+                }
+
+                override fun onNext(bean: CommonPostBean) {
+                    mView?.onGetPostSuccess(bean)
+                }
+
+                override fun onError(e: Throwable) {
+                    mView?.onGetPostError(e.message)
+                }
+
+                override fun onComplete() {}
+            })
+    }
+
+    fun userLikesDiscourse(username: String, page: Int) {
+        discourseApiHelper.getUserLikesAsCommonPost(username, (page - 1) * 30)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : io.reactivex.Observer<CommonPostBean> {
+                override fun onSubscribe(d: Disposable) {
+                    mCompositeDisposable?.add(d)
+                }
+
+                override fun onNext(bean: CommonPostBean) {
+                    mView?.onGetPostSuccess(bean)
+                }
+
+                override fun onError(e: Throwable) {
+                    mView?.onGetPostError(e.message)
+                }
+
+                override fun onComplete() {}
+            })
+    }
+
 
     fun getHotPostList(page: Int, pageSize: Int) {
         postModel.getHotPost(page, pageSize, 2,

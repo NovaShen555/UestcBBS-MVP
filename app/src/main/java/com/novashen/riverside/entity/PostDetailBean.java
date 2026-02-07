@@ -53,10 +53,12 @@ public class PostDetailBean implements MultiItemEntity {
         public int hits;
         public int essence;
         public int vote;
+        public String currentUserReactionId;
         public int hot;
         public int top;
         public int is_favor;
         public int favoriteNum;//收藏数量
+        public int bookmarkId;
         public String create_date;
         public String icon;
         public int level;
@@ -224,6 +226,7 @@ public class PostDetailBean implements MultiItemEntity {
         public List<ExtraPanelBeanX> extraPanel;
         public String awardInfo;
         public boolean isSupported;
+        public boolean supportStatusFromServer;
         public int supportedCount;
         public boolean isHotComment;
         public List<ListBean> quote_comments;

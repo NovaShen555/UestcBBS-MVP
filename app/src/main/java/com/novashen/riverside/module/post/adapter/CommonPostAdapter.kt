@@ -49,7 +49,7 @@ class CommonPostAdapter(layoutResId: Int, val type: String = "", onPreload: (() 
 
     override fun convert(helper: BaseViewHolder, item: CommonPostBean.ListBean) {
         super.convert(helper, item)
-        val hideContent = false
+        val hideContent = type == CommonPostFragment.TYPE_USER_FAVORITE && (item.type == "bookmark")
         val avatar = helper.getView<ImageView>(R.id.avatar)
         val userName = helper.getView<TextView>(R.id.user_name)
         val time = helper.getView<TextView>(R.id.time)

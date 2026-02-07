@@ -37,6 +37,7 @@ class UserDetailViewPagerAdapter(fragmentActivity: FragmentActivity, uid: Int, v
         fragments.add(CommonPostFragment.getInstance(Bundle().apply {
             putString(Constant.IntentKey.TYPE, CommonPostFragment.TYPE_USER_FAVORITE)
             putInt(Constant.IntentKey.USER_ID, uid)
+            putString(Constant.IntentKey.USER_NAME, username)
         }))
     }
 

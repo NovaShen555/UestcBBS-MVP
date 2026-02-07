@@ -27,7 +27,6 @@ import com.novashen.riverside.util.TimeUtil
 import com.novashen.riverside.util.load
 import com.novashen.util.ColorUtil
 import com.novashen.util.ScreenUtil
-import org.litepal.LitePal
 import java.util.regex.Pattern
 
 /**
@@ -138,7 +137,9 @@ class PostCommentAdapter(layoutResId: Int, onPreload: (() -> Unit)? = null) :
             }
         }
         item.isHotComment = item.supportedCount >= SharePrefUtil.getHotCommentZanThreshold(mContext)
-        item.isSupported = null != LitePal.where("pid = " + item.reply_posts_id).findFirst(SupportedBean::class.java)
+        if (!item.supportStatusFromServer) {
+            item.isSupported = "+1" == SharePrefUtil.getPostReaction(mContext, item.reply_posts_id)
+        }
 
         updateSupport(helper, item)
         updateHotImg(helper, item)

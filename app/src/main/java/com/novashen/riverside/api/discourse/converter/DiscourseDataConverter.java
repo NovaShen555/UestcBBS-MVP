@@ -1,6 +1,7 @@
 package com.novashen.riverside.api.discourse.converter;
 
 import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseUserBookmarksResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
 import com.novashen.riverside.entity.CommonPostBean;
 
@@ -37,20 +38,59 @@ public class DiscourseDataConverter {
                  item.last_reply_date = String.valueOf(parseTime(action.getCreatedAt()));
                  item.topic_id = action.getTopicId();
                  item.reply_content = action.getExcerpt();
-                 
-                 // If action type is 5 (Reply), maybe set some flag or specific ui
-                 item.type = "reply"; // custom type or reuse existing
-                 item.board_name = "回复";
+
+                 String actionLabel = getActionLabel(action.getActionType());
+                 item.type = actionLabel;
+                 item.board_name = actionLabel;
 
                  bean.list.add(item);
             }
             bean.rs = 1; 
             bean.page = 1;
-            bean.has_next = 1; // Simplify paging
+            bean.has_next = response.getUserActions().size() >= 30 ? 1 : 0;
             bean.total_num = bean.list.size();
         } else {
              bean.rs = 0;
         }
+        return bean;
+    }
+
+    public static CommonPostBean convertBookmarksToCommonPostBean(DiscourseUserBookmarksResponse response) {
+        CommonPostBean bean = new CommonPostBean();
+        bean.list = new ArrayList<>();
+
+        if (response != null && response.getUserBookmarkList() != null
+                && response.getUserBookmarkList().getBookmarks() != null) {
+            for (DiscourseUserBookmarksResponse.Bookmark bookmark : response.getUserBookmarkList().getBookmarks()) {
+                CommonPostBean.ListBean item = new CommonPostBean.ListBean();
+                item.title = bookmark.getTitle();
+                item.subject = bookmark.getExcerpt();
+                item.reply_content = bookmark.getExcerpt();
+                item.topic_id = bookmark.getTopicId();
+                item.board_id = bookmark.getCategoryId();
+                item.board_name = "收藏";
+                item.type = "bookmark";
+                item.last_reply_date = String.valueOf(parseTime(bookmark.getCreatedAt()));
+                item.sourceWebUrl = bookmark.getBookmarkableUrl();
+                item.tags = bookmark.getTags();
+
+                DiscourseUserBookmarksResponse.User user = bookmark.getUser();
+                if (user != null) {
+                    item.user_id = user.getId();
+                    item.user_nick_name = user.getUsername();
+                    item.userAvatar = getAvatarUrl(user.getAvatarTemplate(), 120);
+                }
+
+                bean.list.add(item);
+            }
+            bean.rs = 1;
+            bean.page = 1;
+            bean.has_next = response.getUserBookmarkList().getBookmarks().size() >= 30 ? 1 : 0;
+            bean.total_num = bean.list.size();
+        } else {
+            bean.rs = 0;
+        }
+
         return bean;
     }
 
@@ -203,6 +243,16 @@ public class DiscourseDataConverter {
      */
     private static String formatDate(String isoDate) {
         return String.valueOf(parseTime(isoDate));
+    }
+
+    private static String getActionLabel(int actionType) {
+        if (actionType == 1) {
+            return "点赞";
+        }
+        if (actionType == 5) {
+            return "回复";
+        }
+        return "动态";
     }
 
     /**

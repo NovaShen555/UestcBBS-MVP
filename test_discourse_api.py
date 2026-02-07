@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Discourse API 测试脚本
-测试完整的登录和发帖流程
+Discourse API 通用测试脚本
+固定登录前置 + 按需请求 API 并返回结构化结果
 """
 
 import requests
 import json
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class DiscourseAPITester:
     def __init__(self, base_url: str):
@@ -87,95 +87,90 @@ class DiscourseAPITester:
             print(f"✗ 异常: {e}")
             return False
 
-    def create_post(self, topic_id: int, content: str, category_id: Optional[int] = None,
-                    reply_to_post_number: Optional[int] = None) -> bool:
-        """发表评论"""
-        print("\n=== 步骤 3: 发表评论 ===")
-        url = f"{self.base_url}/posts"
+    def login_and_get_session(self, username: str, password: str) -> Optional[requests.Session]:
+        """固定前置：登录并返回携带 Cookie 的会话"""
+        if not self.get_csrf_token():
+            return None
+        if not self.login(username, password):
+            return None
+        return self.session
 
-        payload = {
-            'raw': content,
-            'topic_id': topic_id,
-            'archetype': 'regular',
-            'nested_post': True
-        }
+    def request_api(self,
+                    method: str,
+                    path: str,
+                    params: Optional[Dict[str, Any]] = None,
+                    data: Optional[Dict[str, Any]] = None,
+                    json_body: Optional[Dict[str, Any]] = None,
+                    headers: Optional[Dict[str, str]] = None,
+                    timeout: int = 20) -> Dict[str, Any]:
+        """通用 API 请求，返回结构化结果便于 agent 解析"""
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        method = method.upper().strip()
 
-        if category_id is not None:
-            payload['category'] = category_id
-
-        if reply_to_post_number is not None:
-            payload['reply_to_post_number'] = reply_to_post_number
+        merged_headers = dict(self.session.headers)
+        if headers:
+            merged_headers.update(headers)
 
         try:
-            print(f"请求 URL: {url}")
-            print(f"请求头: {dict(self.session.headers)}")
-            print(f"请求体: {json.dumps(payload, ensure_ascii=False, indent=2)}")
-            print(f"Cookies: {dict(self.session.cookies)}")
+            response = self.session.request(
+                method=method,
+                url=url,
+                params=params,
+                data=data,
+                json=json_body,
+                headers=merged_headers,
+                timeout=timeout
+            )
 
-            response = self.session.post(url, json=payload)
-            print(f"\n响应状态码: {response.status_code}")
-            print(f"响应头: {dict(response.headers)}")
-            print(f"响应体: {response.text}")
+            try:
+                body = response.json()
+            except Exception:
+                body = response.text
 
-            if response.status_code == 200:
-                data = response.json()
-                print(f"\n✓ 发表评论成功！")
-                print(f"  帖子ID: {data.get('id')}")
-                print(f"  楼层号: {data.get('post_number')}")
-                return True
-            else:
-                print(f"\n✗ 发表评论失败")
-                print(f"  状态码: {response.status_code}")
-                print(f"  错误信息: {response.text}")
-                return False
+            return {
+                "ok": response.ok,
+                "status_code": response.status_code,
+                "url": response.url,
+                "headers": dict(response.headers),
+                "body": body,
+                "cookies": dict(self.session.cookies),
+            }
         except Exception as e:
-            print(f"✗ 异常: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
+            return {
+                "ok": False,
+                "status_code": None,
+                "url": url,
+                "headers": {},
+                "body": str(e),
+                "cookies": dict(self.session.cookies),
+            }
 
-    def test_full_flow(self, username: str, password: str, topic_id: int,
-                       content: str, category_id: Optional[int] = None):
-        """测试完整流程"""
-        print("=" * 60)
-        print("Discourse API 完整流程测试")
-        print("=" * 60)
-
-        # 步骤 1: 获取 CSRF token
-        if not self.get_csrf_token():
-            print("\n✗ 测试失败：无法获取 CSRF token")
-            return False
-
-        # 步骤 2: 登录
-        if not self.login(username, password):
-            print("\n✗ 测试失败：登录失败")
-            return False
-
-        # 步骤 3: 发表评论
-        if not self.create_post(topic_id, content, category_id):
-            print("\n✗ 测试失败：发表评论失败")
-            return False
-
-        print("\n" + "=" * 60)
-        print("✓ 所有测试通过！")
-        print("=" * 60)
-        return True
 
 
 def main():
     # 配置信息
     BASE_URL = "https://river-side.cc"
-    USERNAME = input("请输入用户名: ").strip()
-    PASSWORD = input("请输入密码: ").strip()
-    TOPIC_ID = 2056
-    CONTENT = "这是一条测试评论，用于调试 API 接口。[测试时间: 2026-01-26]"
+    USERNAME = "NoahShen"
+    PASSWORD = "SYHhyh240507"
 
-    # 可选：如果知道分类ID，可以填写
-    CATEGORY_ID = None  # 例如: 1, 2, 3 等
-
-    # 创建测试器并运行
+    # 创建测试器并登录
     tester = DiscourseAPITester(BASE_URL)
-    tester.test_full_flow(USERNAME, PASSWORD, TOPIC_ID, CONTENT, CATEGORY_ID)
+    session = tester.login_and_get_session(USERNAME, PASSWORD)
+    if session is None:
+        print("\n✗ 登录流程失败，无法继续测试")
+        return
+
+    # 示例：根据需要修改测试目标
+    api_result = tester.request_api(
+        method="GET",
+        path="/site.json",
+        params=None,
+        data=None,
+        json_body=None
+    )
+
+    print("\n=== API 测试结果 ===")
+    print(json.dumps(api_result, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
