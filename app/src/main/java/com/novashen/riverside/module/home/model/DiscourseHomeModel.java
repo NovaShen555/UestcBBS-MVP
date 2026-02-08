@@ -26,8 +26,8 @@ public class DiscourseHomeModel {
      * 获取最新回复的帖子列表
      * @param observer 观察者
      */
-    public void getLatestTopics(Observer<CommonPostBean> observer) {
-        apiHelper.getLatestTopicsAsCommonPost()
+    public void getLatestTopics(int page, Observer<CommonPostBean> observer) {
+        apiHelper.getLatestTopicsAsCommonPost(page)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new io.reactivex.Observer<CommonPostBean>() {
@@ -57,8 +57,8 @@ public class DiscourseHomeModel {
      * 获取最新创建的帖子列表
      * @param observer 观察者
      */
-    public void getNewTopics(Observer<CommonPostBean> observer) {
-        apiHelper.getNewTopicsAsCommonPost()
+    public void getNewTopics(int page, Observer<CommonPostBean> observer) {
+        apiHelper.getNewTopicsAsCommonPost(page)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new io.reactivex.Observer<CommonPostBean>() {

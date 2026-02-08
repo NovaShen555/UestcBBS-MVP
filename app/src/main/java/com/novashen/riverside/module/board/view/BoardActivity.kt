@@ -46,6 +46,7 @@ class BoardActivity: BaseVBActivity<BoardPresenter, BoardView, ActivityNewBoardB
     BoardView, CoverBehavior.OnCoverViewChanged {
 
     private var boardId = 0
+    private var parentBoardId = 0
     private var locateBoardId = 0
     private lateinit var boardName: String
     private var deprecatedBoard = false
@@ -58,6 +59,7 @@ class BoardActivity: BaseVBActivity<BoardPresenter, BoardView, ActivityNewBoardB
         boardId = intent?.getIntExtra(Constant.IntentKey.BOARD_ID, Int.MAX_VALUE)?:Int.MAX_VALUE
         boardName = intent?.getStringExtra(Constant.IntentKey.BOARD_NAME) ?: ""
         locateBoardId = intent?.getIntExtra(Constant.IntentKey.LOCATE_BOARD_ID, Int.MAX_VALUE)?:Int.MAX_VALUE
+        parentBoardId = intent?.getIntExtra(Constant.IntentKey.PARENT_BOARD_ID, Int.MAX_VALUE)?:Int.MAX_VALUE
 
         val tmpName = ForumListManager.INSTANCE.getForumInfo(boardId).name ?: ""
         if (tmpName.isNotEmpty()) {
@@ -66,6 +68,10 @@ class BoardActivity: BaseVBActivity<BoardPresenter, BoardView, ActivityNewBoardB
         if (boardId == 0) {
             deprecatedBoard = true
             boardId = locateBoardId
+        }
+
+        if (parentBoardId == Int.MAX_VALUE) {
+            parentBoardId = boardId
         }
     }
 
@@ -85,7 +91,7 @@ class BoardActivity: BaseVBActivity<BoardPresenter, BoardView, ActivityNewBoardB
 
         loadBoardImg()
         mPresenter?.getForumDetail(boardId)
-        mPresenter?.getSubBoardList(boardId)
+        mPresenter?.getSubBoardList(parentBoardId)
 
         mBinding.statusView.loading(mBinding.coverLayout, mBinding.appBar, mBinding.contentLayout)
     }
@@ -129,7 +135,7 @@ class BoardActivity: BaseVBActivity<BoardPresenter, BoardView, ActivityNewBoardB
 
         mBinding.viewpager.apply {
             offscreenPageLimit = titles.size
-            adapter = BoardPostViewPagerAdapter(this@BoardActivity, ids)
+            adapter = BoardPostViewPagerAdapter(this@BoardActivity, ids, parentBoardId)
             currentItem = 0
         }
 

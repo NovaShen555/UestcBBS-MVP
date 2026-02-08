@@ -7,6 +7,7 @@ import com.novashen.riverside.base.BasePresenter;
 import com.novashen.riverside.entity.CommonPostBean;
 import com.novashen.riverside.helper.ExceptionHelper;
 import com.novashen.riverside.helper.rxhelper.Observer;
+import com.novashen.riverside.module.board.model.DiscourseBoardPostModel;
 import com.novashen.riverside.module.board.model.BoardModel;
 import com.novashen.riverside.module.board.view.BoardPostView;
 
@@ -18,6 +19,7 @@ import io.reactivex.disposables.Disposable;
 public class BoardPostPresenter extends BasePresenter<BoardPostView> {
 
     private BoardModel boardModel = new BoardModel();
+    private DiscourseBoardPostModel discourseBoardPostModel = new DiscourseBoardPostModel();
 
     public void getBoardPostList(int page,
                                  int pageSize,
@@ -55,6 +57,34 @@ public class BoardPostPresenter extends BasePresenter<BoardPostView> {
                         disposable.add(d);
                     }
                 });
+    }
+
+    public void getDiscourseBoardPostList(int parentId, int childId, int page) {
+        discourseBoardPostModel.getCategoryTopics(parentId, childId, page, new Observer<CommonPostBean>() {
+            @Override
+            public void OnSuccess(CommonPostBean commonPostBean) {
+                if (commonPostBean != null && commonPostBean.rs == 1) {
+                    view.onGetBoardPostSuccess(commonPostBean);
+                } else {
+                    view.onGetBoardPostError("加载板块失败");
+                }
+            }
+
+            @Override
+            public void onError(ExceptionHelper.ResponseThrowable e) {
+                view.onGetBoardPostError(e.message);
+            }
+
+            @Override
+            public void OnCompleted() {
+
+            }
+
+            @Override
+            public void OnDisposable(Disposable d) {
+                disposable.add(d);
+            }
+        });
     }
 
     public void payForVisiting(int fid, String formhash) {

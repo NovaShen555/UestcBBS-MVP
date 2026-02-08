@@ -23,10 +23,12 @@ public class BoardPostViewPagerAdapter extends FragmentStateAdapter {
 
     private ArrayList<Fragment> fragments;
     private List<Integer> ids;
+    private int parentBoardId;
 
-    public BoardPostViewPagerAdapter(@NonNull FragmentActivity fragmentActivity, List<Integer> ids) {
+    public BoardPostViewPagerAdapter(@NonNull FragmentActivity fragmentActivity, List<Integer> ids, int parentBoardId) {
         super(fragmentActivity);
         this.ids = ids;
+        this.parentBoardId = parentBoardId;
         init();
     }
 
@@ -36,6 +38,7 @@ public class BoardPostViewPagerAdapter extends FragmentStateAdapter {
             Bundle bundle = new Bundle();
             bundle.putString(Constant.IntentKey.TYPE, PostSortByType.TYPE_ALL);
             bundle.putInt(Constant.IntentKey.BOARD_ID, ids.get(i));
+            bundle.putInt(Constant.IntentKey.PARENT_BOARD_ID, parentBoardId);
             bundle.putInt(Constant.IntentKey.FILTER_ID, 0);
             fragments.add(BoardPostFragment.getInstance(bundle));
         }

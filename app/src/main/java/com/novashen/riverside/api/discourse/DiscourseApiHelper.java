@@ -24,12 +24,12 @@ public class DiscourseApiHelper {
     /**
      * 获取最新回复的帖子列表（转换为 CommonPostBean 格式）
      */
-    public Observable<CommonPostBean> getLatestTopicsAsCommonPost() {
-        return apiService.getLatestTopics()
+    public Observable<CommonPostBean> getLatestTopicsAsCommonPost(int page) {
+        return apiService.getLatestTopics(page)
                 .map(new Function<TopicListResponse, CommonPostBean>() {
                     @Override
                     public CommonPostBean apply(TopicListResponse response) throws Exception {
-                        return DiscourseDataConverter.convertToCommonPostBean(response);
+                        return DiscourseDataConverter.convertToCommonPostBean(response, page);
                     }
                 });
     }
@@ -37,12 +37,25 @@ public class DiscourseApiHelper {
     /**
      * 获取最新创建的帖子列表（转换为 CommonPostBean 格式）
      */
-    public Observable<CommonPostBean> getNewTopicsAsCommonPost() {
-        return apiService.getNewTopics()
+    public Observable<CommonPostBean> getNewTopicsAsCommonPost(int page) {
+        return apiService.getNewTopics(page)
                 .map(new Function<TopicListResponse, CommonPostBean>() {
                     @Override
                     public CommonPostBean apply(TopicListResponse response) throws Exception {
-                        return DiscourseDataConverter.convertToCommonPostBean(response);
+                        return DiscourseDataConverter.convertToCommonPostBean(response, page);
+                    }
+                });
+    }
+
+    /**
+     * 获取板块帖子列表（转换为 CommonPostBean 格式）
+     */
+    public Observable<CommonPostBean> getCategoryTopicsAsCommonPost(int parentId, int childId, int page) {
+        return apiService.getCategoryTopics(parentId, childId, page)
+                .map(new Function<TopicListResponse, CommonPostBean>() {
+                    @Override
+                    public CommonPostBean apply(TopicListResponse response) throws Exception {
+                        return DiscourseDataConverter.convertToCommonPostBean(response, page);
                     }
                 });
     }
@@ -50,15 +63,15 @@ public class DiscourseApiHelper {
     /**
      * 获取最新回复的帖子列表（原始 Discourse 格式）
      */
-    public Observable<TopicListResponse> getLatestTopics() {
-        return apiService.getLatestTopics();
+    public Observable<TopicListResponse> getLatestTopics(int page) {
+        return apiService.getLatestTopics(page);
     }
 
     /**
      * 获取最新创建的帖子列表（原始 Discourse 格式）
      */
-    public Observable<TopicListResponse> getNewTopics() {
-        return apiService.getNewTopics();
+    public Observable<TopicListResponse> getNewTopics(int page) {
+        return apiService.getNewTopics(page);
     }
 
     public Observable<CommonPostBean> getUserTopicsAsCommonPost(String username) {
@@ -66,7 +79,7 @@ public class DiscourseApiHelper {
                 .map(new Function<TopicListResponse, CommonPostBean>() {
                     @Override
                     public CommonPostBean apply(TopicListResponse response) throws Exception {
-                        return DiscourseDataConverter.convertToCommonPostBean(response);
+                        return DiscourseDataConverter.convertToCommonPostBean(response, 0);
                     }
                 });
     }

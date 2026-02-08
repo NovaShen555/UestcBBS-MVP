@@ -6,8 +6,15 @@ import com.novashen.riverside.api.discourse.entity.CategoryDetailResponse;
 import com.novashen.riverside.helper.ExceptionHelper;
 import com.novashen.riverside.helper.rxhelper.Observer;
 
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+import retrofit2.HttpException;
 
 /**
  * Discourse 板块数据模型
@@ -54,6 +61,28 @@ public class DiscourseBoardModel {
         DiscourseRetrofitUtil.getInstance()
                 .getApiService()
                 .getCategoryDetail(categoryId)
+                .retryWhen(new Function<Observable<Throwable>, Observable<?>>() {
+                    @Override
+                    public Observable<?> apply(Observable<Throwable> errors) {
+                        return errors
+                                .zipWith(Observable.range(1, 3), new BiFunction<Throwable, Integer, Integer>() {
+                                    @Override
+                                    public Integer apply(Throwable throwable, Integer retryCount) {
+                                        if (throwable instanceof HttpException
+                                                && ((HttpException) throwable).code() == 429) {
+                                            return retryCount;
+                                        }
+                                        throw Exceptions.propagate(throwable);
+                                    }
+                                })
+                                .flatMap(new Function<Integer, Observable<?>>() {
+                                    @Override
+                                    public Observable<?> apply(Integer retryCount) {
+                                        return Observable.timer(1, TimeUnit.SECONDS);
+                                    }
+                                });
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new io.reactivex.Observer<CategoryDetailResponse>() {

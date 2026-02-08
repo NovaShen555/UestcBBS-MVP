@@ -22,7 +22,11 @@ public class ForumListRightAdapter extends BaseQuickAdapter<ForumListBean.ListBe
     @Override
     protected void convert(BaseViewHolder helper, ForumListBean.ListBean item) {
         helper.setText(R.id.forum_list_right_title, item.board_category_name);
-        ForumListGridViewAdapter forumListGridViewAdapter = new ForumListGridViewAdapter(mContext, getData().get(helper.getLayoutPosition()).board_list);
+        ForumListGridViewAdapter forumListGridViewAdapter = new ForumListGridViewAdapter(
+            mContext,
+            getData().get(helper.getLayoutPosition()).board_list,
+            item.board_category_id
+        );
         GridView gridView = helper.getView(R.id.forum_list_right_gridview);
         gridView.setNumColumns(SharePrefUtil.getBoardListColumns(mContext));
         gridView.setAdapter(forumListGridViewAdapter);

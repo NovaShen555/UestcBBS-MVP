@@ -1,12 +1,12 @@
 package com.novashen.riverside.module.board.presenter
 
-import com.novashen.riverside.api.ApiConstant
 import com.novashen.riverside.base.BaseVBPresenter
 import com.novashen.riverside.entity.ForumDetailBean
 import com.novashen.riverside.entity.SubForumListBean
 import com.novashen.riverside.helper.ExceptionHelper.ResponseThrowable
 import com.novashen.riverside.helper.rxhelper.Observer
 import com.novashen.riverside.module.board.model.BoardModel
+import com.novashen.riverside.module.board.model.DiscourseBoardModel
 import com.novashen.riverside.module.board.view.BoardView
 import com.novashen.riverside.util.BBSLinkUtil
 import com.novashen.riverside.util.Constant
@@ -20,16 +20,36 @@ import org.jsoup.Jsoup
 class BoardPresenter: BaseVBPresenter<BoardView>() {
 
     private val boardModel = BoardModel()
+    private val discourseBoardModel = DiscourseBoardModel()
 
     fun getSubBoardList(fid: Int) {
-        boardModel.getSubForumList(fid, object : Observer<SubForumListBean>() {
-            override fun OnSuccess(subForumListBean: SubForumListBean) {
-                if (subForumListBean.rs == ApiConstant.Code.SUCCESS_CODE) {
-                    mView?.onGetSubBoardListSuccess(subForumListBean)
+        discourseBoardModel.getCategories(object : Observer<com.novashen.riverside.api.discourse.entity.CategoriesResponse>() {
+            override fun OnSuccess(response: com.novashen.riverside.api.discourse.entity.CategoriesResponse) {
+                val subForumListBean = SubForumListBean()
+                subForumListBean.rs = 1
+                subForumListBean.list = mutableListOf()
+                val listBean = SubForumListBean.ListBean()
+                listBean.board_list = mutableListOf()
+
+                val categories = response.categoryList?.categories
+                if (categories != null) {
+                    categories.forEach { category ->
+                        if (category.parentCategoryId != null && category.parentCategoryId == fid) {
+                            val child = SubForumListBean.ListBean.BoardListBean().apply {
+                                board_id = category.id
+                                board_name = category.name
+                                description = category.descriptionText
+                                td_posts_num = category.topicCount
+                                topic_total_num = category.topicCount
+                                posts_total_num = category.postCount
+                            }
+                            listBean.board_list.add(child)
+                        }
+                    }
                 }
-                if (subForumListBean.rs == ApiConstant.Code.ERROR_CODE) {
-                    mView?.onGetSubBoardListError(subForumListBean.head.errInfo)
-                }
+
+                subForumListBean.list.add(listBean)
+                mView?.onGetSubBoardListSuccess(subForumListBean)
             }
 
             override fun onError(e: ResponseThrowable) {

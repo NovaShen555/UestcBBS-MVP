@@ -53,7 +53,7 @@ public class BoardPostFragment extends BaseFragment implements BoardPostView{
     private View filterView;
     private ChipGroup mChipGroup;
 
-    private int boardId, mFid, page = 1;
+    private int boardId, parentBoardId, mFid, page = 1;
     private String sortBy;
 
     private BoardPostPresenter boardPostPresenter;
@@ -69,6 +69,7 @@ public class BoardPostFragment extends BaseFragment implements BoardPostView{
         super.getBundle(bundle);
         if (bundle != null) {
             boardId = bundle.getInt(Constant.IntentKey.BOARD_ID, Integer.MAX_VALUE);
+            parentBoardId = bundle.getInt(Constant.IntentKey.PARENT_BOARD_ID, Integer.MAX_VALUE);
             mFid = bundle.getInt(Constant.IntentKey.FILTER_ID, Integer.MAX_VALUE);
             sortBy = bundle.getString(Constant.IntentKey.TYPE);
         }
@@ -153,18 +154,26 @@ public class BoardPostFragment extends BaseFragment implements BoardPostView{
             @Override
             public void onRefresh(RefreshLayout refreshLayout) {
                 page = 1;
-                boardPostPresenter.getBoardPostList(page,
-                        SharePrefUtil.getPageSize(mActivity), 1,
-                        boardId, mFid, "typeid", sortBy,
-                        mActivity);
+                if (parentBoardId != Integer.MAX_VALUE) {
+                    boardPostPresenter.getDiscourseBoardPostList(parentBoardId, boardId, page - 1);
+                } else {
+                    boardPostPresenter.getBoardPostList(page,
+                            SharePrefUtil.getPageSize(mActivity), 1,
+                            boardId, mFid, "typeid", sortBy,
+                            mActivity);
+                }
             }
 
             @Override
             public void onLoadMore(RefreshLayout refreshLayout) {
-                boardPostPresenter.getBoardPostList(page,
-                        SharePrefUtil.getPageSize(mActivity), 1,
-                        boardId, mFid, "typeid", sortBy,
-                        mActivity);
+                if (parentBoardId != Integer.MAX_VALUE) {
+                    boardPostPresenter.getDiscourseBoardPostList(parentBoardId, boardId, page - 1);
+                } else {
+                    boardPostPresenter.getBoardPostList(page,
+                            SharePrefUtil.getPageSize(mActivity), 1,
+                            boardId, mFid, "typeid", sortBy,
+                            mActivity);
+                }
             }
         });
     }

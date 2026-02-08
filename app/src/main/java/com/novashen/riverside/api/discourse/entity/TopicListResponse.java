@@ -421,7 +421,7 @@ public class TopicListResponse {
         private Boolean liked;
 
         @SerializedName("tags")
-        private List<String> tags;
+        private List<Object> tags;
 
         @SerializedName("views")
         private int views;
@@ -628,11 +628,11 @@ public class TopicListResponse {
             this.liked = liked;
         }
 
-        public List<String> getTags() {
+        public List<Object> getTags() {
             return tags;
         }
 
-        public void setTags(List<String> tags) {
+        public void setTags(List<Object> tags) {
             this.tags = tags;
         }
 

@@ -38,6 +38,7 @@ public class Constant {
         public static final String BOARD_CAT_DATA = "cat_data";
         public static final String SORT_BY = "sort_by";
         public static final String BOARD_ID = "board_id";
+        public static final String PARENT_BOARD_ID = "parent_board_id";
         public static final String LOCATE_BOARD_ID = "locate_board_id";
         public static final String BOARD_NAME= "board_name";
         public static final String FILTER_ID = "filter_id";

@@ -2,6 +2,7 @@ package com.novashen.riverside.module.board.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,8 @@ import com.novashen.riverside.util.Constant;
 import com.novashen.riverside.util.SharePrefUtil;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * author: sca_tl
@@ -28,10 +31,14 @@ public class ForumListGridViewAdapter extends BaseAdapter {
 
     private Context context;
     private List<ForumListBean.ListBean.BoardListBean> boardListBeans;
+    private int parentBoardId;
+    private static final String ASSET_PREFIX = "file:///android_asset/";
+    private static final Map<String, Boolean> ASSET_EXISTS_CACHE = new ConcurrentHashMap<>();
 
-    public ForumListGridViewAdapter(Context context, List<ForumListBean.ListBean.BoardListBean> listBeans) {
+    public ForumListGridViewAdapter(Context context, List<ForumListBean.ListBean.BoardListBean> listBeans, int parentBoardId) {
         this.context = context;
         this.boardListBeans = listBeans;
+        this.parentBoardId = parentBoardId;
     }
 
     @Override
@@ -66,6 +73,7 @@ public class ForumListGridViewAdapter extends BaseAdapter {
             holder.rootLayout.setOnClickListener(view1 -> {
                 Intent intent = new Intent(context, BoardActivity.class);
                 intent.putExtra(Constant.IntentKey.BOARD_ID, boardListBeans.get(i).board_id);
+                intent.putExtra(Constant.IntentKey.PARENT_BOARD_ID, parentBoardId);
                 intent.putExtra(Constant.IntentKey.BOARD_NAME, boardListBeans.get(i).board_name);
                 context.startActivity(intent);
             });
@@ -80,11 +88,40 @@ public class ForumListGridViewAdapter extends BaseAdapter {
         holder.name.setText(boardListBean.board_name + "(" + boardListBean.td_posts_num + ")");
 //        holder.desc.setText(context.getResources().getString(R.string.today_posts, boardListBean.td_posts_num));
 
-//        GlideLoader4Common.simpleLoad(context, boardListBean.board_img, holder.imageView);//加载已有的板块icon
-//        GlideLoader4Common.simpleLoad(context, "file:///android_asset/board_img/" + boardListBean.board_id + ".jpg", holder.imageView);
-        GlideLoader4Common.simpleLoad(context, SharePrefUtil.getBoardImg(context, boardListBean.board_id), holder.imageView);
+        String imgPath = !TextUtils.isEmpty(boardListBean.board_img)
+                ? boardListBean.board_img
+                : SharePrefUtil.getBoardImg(context, boardListBean.board_id);
+
+        if (!TextUtils.isEmpty(imgPath) && imgPath.startsWith(ASSET_PREFIX)) {
+            String assetPath = imgPath.substring(ASSET_PREFIX.length());
+            if (assetExists(assetPath)) {
+                GlideLoader4Common.simpleLoad(context, imgPath, holder.imageView);
+            } else {
+                holder.imageView.setImageResource(R.drawable.ic_boardlist1);
+            }
+        } else if (!TextUtils.isEmpty(imgPath)) {
+            GlideLoader4Common.simpleLoad(context, imgPath, holder.imageView);
+        } else {
+            holder.imageView.setImageResource(R.drawable.ic_boardlist1);
+        }
 
         return view;
+    }
+
+    private boolean assetExists(String assetPath) {
+        Boolean cached = ASSET_EXISTS_CACHE.get(assetPath);
+        if (cached != null) {
+            return cached;
+        }
+        boolean exists;
+        try {
+            context.getAssets().open(assetPath).close();
+            exists = true;
+        } catch (Exception e) {
+            exists = false;
+        }
+        ASSET_EXISTS_CACHE.put(assetPath, exists);
+        return exists;
     }
 
     public static class ViewHolder {

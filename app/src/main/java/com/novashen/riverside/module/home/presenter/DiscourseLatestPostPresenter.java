@@ -23,7 +23,11 @@ public class DiscourseLatestPostPresenter extends LatestPostPresenter {
      * 获取最新回复的帖子列表
      */
     public void getLatestTopics() {
-        discourseHomeModel.getLatestTopics(new Observer<CommonPostBean>() {
+        getLatestTopics(0);
+    }
+
+    public void getLatestTopics(int page) {
+        discourseHomeModel.getLatestTopics(page, new Observer<CommonPostBean>() {
             @Override
             public void OnSuccess(CommonPostBean commonPostBean) {
                 if (commonPostBean.rs == ApiConstant.Code.SUCCESS_CODE) {
@@ -54,7 +58,11 @@ public class DiscourseLatestPostPresenter extends LatestPostPresenter {
      * 获取最新创建的帖子列表
      */
     public void getNewTopics() {
-        discourseHomeModel.getNewTopics(new Observer<CommonPostBean>() {
+        getNewTopics(0);
+    }
+
+    public void getNewTopics(int page) {
+        discourseHomeModel.getNewTopics(page, new Observer<CommonPostBean>() {
             @Override
             public void OnSuccess(CommonPostBean commonPostBean) {
                 if (commonPostBean.rs == ApiConstant.Code.SUCCESS_CODE) {

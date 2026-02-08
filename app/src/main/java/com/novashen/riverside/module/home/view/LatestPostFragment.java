@@ -215,7 +215,7 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
         RefreshUtil.setOnRefreshListener(mActivity, refreshLayout, new OnRefresh() {
             @Override
             public void onRefresh(RefreshLayout refreshLayout) {
-                total_post_page = 1;
+                total_post_page = 0;
 
                 mLatestPostPresenter.getHomePage();
                 mLatestPostPresenter.getBannerData();
@@ -223,7 +223,8 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
 
                 // 使用 Discourse API 获取最新创建的帖子
                 if (presenter instanceof com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) {
-                    ((com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) presenter).getNewTopics();
+                    ((com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) presenter)
+                            .getNewTopics(total_post_page);
                 } else {
                     mLatestPostPresenter.getSimplePostList(1, SharePrefUtil.getPageSize(mActivity), "new", mActivity);
                 }
@@ -231,9 +232,13 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
 
             @Override
             public void onLoadMore(RefreshLayout refreshLayout) {
-                // Discourse API 暂不支持分页，直接完成加载
-                refreshLayout.finishLoadMore();
-                showToast("已加载全部内容", ToastType.TYPE_NORMAL);
+                if (presenter instanceof com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) {
+                    ((com.novashen.riverside.module.home.presenter.DiscourseLatestPostPresenter) presenter)
+                            .getNewTopics(total_post_page);
+                } else {
+                    refreshLayout.finishLoadMore();
+                    showToast("已加载全部内容", ToastType.TYPE_NORMAL);
+                }
             }
         });
     }
@@ -375,7 +380,11 @@ public class LatestPostFragment extends BaseFragment implements LatestPostView, 
         if (refreshLayout.getState() == RefreshState.Refreshing)
             refreshLayout.finishRefresh();
         if (refreshLayout.getState() == RefreshState.Loading) {
-            refreshLayout.finishLoadMore();
+            if (simplePostListBean.has_next == 1) {
+                refreshLayout.finishLoadMore(true);
+            } else {
+                refreshLayout.finishLoadMoreWithNoMoreData();
+            }
         }
 
         if (simplePostListBean.page == 1) {

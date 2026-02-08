@@ -33,6 +33,7 @@ public class BoardListFragment extends BaseFragment implements BoardListView {
     private ForumListRightAdapter rightAdapter;
 
     private BoardListPresenter boardListPresenter;
+    private boolean isAutoRefresh = false;
 
     public static BoardListFragment getInstance(Bundle bundle) {
         BoardListFragment boardListFragment = new BoardListFragment();
@@ -75,6 +76,7 @@ public class BoardListFragment extends BaseFragment implements BoardListView {
     @Override
     protected void lazyLoad() {
         super.lazyLoad();
+        isAutoRefresh = true;
         refreshLayout.autoRefresh(10, 300, 1, false);
     }
 
@@ -96,7 +98,9 @@ public class BoardListFragment extends BaseFragment implements BoardListView {
         RefreshUtil.setOnRefreshListener(mActivity, refreshLayout, new OnRefresh() {
             @Override
             public void onRefresh(RefreshLayout refreshLayout) {
-                boardListPresenter.getForumList(mActivity);
+                boolean forceRefresh = !isAutoRefresh;
+                isAutoRefresh = false;
+                boardListPresenter.getForumList(mActivity, forceRefresh);
             }
 
             @Override
@@ -108,23 +112,28 @@ public class BoardListFragment extends BaseFragment implements BoardListView {
     public void onGetBoardListSuccess(ForumListBean forumListBean) {
         if (refreshLayout.getState() == RefreshState.Refreshing) refreshLayout.finishRefresh();
 
-        //添加今日热门，筛选5个发帖量最多的板块
-        ForumListBean.ListBean tdHot = new ForumListBean.ListBean();
-        tdHot.board_category_name = "今日热门";
-        forumListBean.list.add(0, tdHot);
-        for (int j = 1; j < forumListBean.list.size(); j ++) {
-            for (int k = 0; k < forumListBean.list.get(j).board_list.size(); k ++) {
-                tdHot.board_list.add(forumListBean.list.get(j).board_list.get(k));
-                if (tdHot.board_list.size() > 6) {
-                    int aa = tdHot.board_list.get(0).td_posts_num;
-                    int index = 0;
-                    for (int m = 0; m < tdHot.board_list.size(); m ++) {
-                        if (aa >= tdHot.board_list.get(m).td_posts_num) {
-                            aa = tdHot.board_list.get(m).td_posts_num;
-                            index = m;
+        if (forumListBean.list != null && !forumListBean.list.isEmpty()) {
+            boolean hasHot = "今日热门".equals(forumListBean.list.get(0).board_category_name);
+            if (!hasHot) {
+                //添加今日热门，筛选5个发帖量最多的板块
+                ForumListBean.ListBean tdHot = new ForumListBean.ListBean();
+                tdHot.board_category_name = "今日热门";
+                forumListBean.list.add(0, tdHot);
+                for (int j = 1; j < forumListBean.list.size(); j ++) {
+                    for (int k = 0; k < forumListBean.list.get(j).board_list.size(); k ++) {
+                        tdHot.board_list.add(forumListBean.list.get(j).board_list.get(k));
+                        if (tdHot.board_list.size() > 6) {
+                            int aa = tdHot.board_list.get(0).td_posts_num;
+                            int index = 0;
+                            for (int m = 0; m < tdHot.board_list.size(); m ++) {
+                                if (aa >= tdHot.board_list.get(m).td_posts_num) {
+                                    aa = tdHot.board_list.get(m).td_posts_num;
+                                    index = m;
+                                }
+                            }
+                            tdHot.board_list.remove(index);
                         }
                     }
-                    tdHot.board_list.remove(index);
                 }
             }
         }

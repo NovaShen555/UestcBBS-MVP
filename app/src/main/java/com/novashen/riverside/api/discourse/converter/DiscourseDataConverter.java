@@ -98,7 +98,7 @@ public class DiscourseDataConverter {
      * 将 TopicListResponse 转换为 CommonPostBean
      * 用于帖子列表展示
      */
-    public static CommonPostBean convertToCommonPostBean(TopicListResponse response) {
+    public static CommonPostBean convertToCommonPostBean(TopicListResponse response, int page) {
         if (response == null || response.getTopicList() == null) {
             return null;
         }
@@ -123,7 +123,7 @@ public class DiscourseDataConverter {
         commonPostBean.list = topicList;
         commonPostBean.has_next = response.getTopicList().getMoreTopicsUrl() != null ? 1 : 0;
         commonPostBean.rs = 1; // 成功标记
-        commonPostBean.page = 1; // 默认第一页
+        commonPostBean.page = page + 1;
 
         return commonPostBean;
     }
@@ -185,7 +185,7 @@ public class DiscourseDataConverter {
         topic.status = 1; // 默认正常状态
 
         // 标签
-        topic.tags = discourseTopic.getTags();
+        topic.tags = normalizeTags(discourseTopic.getTags());
 
         return topic;
     }
@@ -253,6 +253,38 @@ public class DiscourseDataConverter {
             return "回复";
         }
         return "动态";
+    }
+
+    /**
+     * 兼容 tags 既可能是字符串数组也可能是对象数组的情况
+     */
+    private static List<String> normalizeTags(List<Object> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return null;
+        }
+
+        List<String> result = new ArrayList<>();
+        for (Object tag : tags) {
+            if (tag == null) {
+                continue;
+            }
+            if (tag instanceof String) {
+                String value = ((String) tag).trim();
+                if (!value.isEmpty()) {
+                    result.add(value);
+                }
+            } else if (tag instanceof Map) {
+                Object name = ((Map<?, ?>) tag).get("name");
+                if (name != null) {
+                    String value = name.toString().trim();
+                    if (!value.isEmpty()) {
+                        result.add(value);
+                    }
+                }
+            }
+        }
+
+        return result.isEmpty() ? null : result;
     }
 
     /**

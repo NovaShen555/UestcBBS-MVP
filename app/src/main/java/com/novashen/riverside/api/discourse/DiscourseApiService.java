@@ -68,14 +68,22 @@ public interface DiscourseApiService {
     /**
      * 获取最新回复的帖子列表
      */
-    @GET("latest.json")
-    Observable<TopicListResponse> getLatestTopics();
+        @GET("latest.json")
+        Observable<TopicListResponse> getLatestTopics(@Query("page") int page);
 
     /**
      * 获取最新创建的帖子列表
      */
-    @GET("new.json")
-    Observable<TopicListResponse> getNewTopics();
+        @GET("new.json")
+        Observable<TopicListResponse> getNewTopics(@Query("page") int page);
+
+        /**
+         * 获取板块帖子列表（父板块ID + 子板块ID）
+         */
+        @GET("c/{parent_id}/{child_id}.json")
+        Observable<TopicListResponse> getCategoryTopics(@Path("parent_id") int parentId,
+                                                            @Path("child_id") int childId,
+                                                            @Query("page") int page);
 
     /**
      * 获取当前用户信息
