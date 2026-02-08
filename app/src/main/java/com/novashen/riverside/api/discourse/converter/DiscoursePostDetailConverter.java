@@ -41,6 +41,7 @@ public class DiscoursePostDetailConverter {
         bean.page = 1;
         bean.has_next = 0; // Discourse 一次返回所有回复
         bean.total_num = response.postsCount;
+        bean.forumTopicUrl = DISCOURSE_BASE_URL + "/t/topic/" + response.id;
 
         // 创建用户信息映射表
         Map<Integer, TopicDetailResponse.Participant> userMap = new HashMap<>();

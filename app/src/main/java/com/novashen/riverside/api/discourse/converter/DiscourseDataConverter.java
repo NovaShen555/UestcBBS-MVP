@@ -112,6 +112,9 @@ public class DiscourseDataConverter {
         List<CommonPostBean.ListBean> topicList = new ArrayList<>();
         if (response.getTopicList().getTopics() != null) {
             for (TopicListResponse.Topic discourseTopic : response.getTopicList().getTopics()) {
+                if (discourseTopic.isPinnedGlobally()) {
+                    continue;
+                }
                 CommonPostBean.ListBean topic = convertTopic(discourseTopic, userMap);
                 if (topic != null) {
                     topicList.add(topic);

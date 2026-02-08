@@ -74,8 +74,9 @@ public interface DiscourseApiService {
     /**
      * 获取最新创建的帖子列表
      */
-        @GET("new.json")
-        Observable<TopicListResponse> getNewTopics(@Query("page") int page);
+                  @GET("latest.json")
+                  Observable<TopicListResponse> getLatestTopicsByOrder(@Query("page") int page,
+                                                                                                                                                                 @Query("order") String order);
 
         /**
          * 获取板块帖子列表（父板块ID + 子板块ID）

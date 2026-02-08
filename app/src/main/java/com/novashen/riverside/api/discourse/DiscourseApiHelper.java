@@ -38,7 +38,7 @@ public class DiscourseApiHelper {
      * 获取最新创建的帖子列表（转换为 CommonPostBean 格式）
      */
     public Observable<CommonPostBean> getNewTopicsAsCommonPost(int page) {
-        return apiService.getNewTopics(page)
+        return apiService.getLatestTopicsByOrder(page, "created")
                 .map(new Function<TopicListResponse, CommonPostBean>() {
                     @Override
                     public CommonPostBean apply(TopicListResponse response) throws Exception {
@@ -71,7 +71,7 @@ public class DiscourseApiHelper {
      * 获取最新创建的帖子列表（原始 Discourse 格式）
      */
     public Observable<TopicListResponse> getNewTopics(int page) {
-        return apiService.getNewTopics(page);
+        return apiService.getLatestTopicsByOrder(page, "created");
     }
 
     public Observable<CommonPostBean> getUserTopicsAsCommonPost(String username) {

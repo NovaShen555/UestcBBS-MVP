@@ -217,10 +217,14 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
                 }
             }
             R.id.copy_link -> {
-                ClipBoardUtil.copyToClipBoard(this, postDetailBean?.forumTopicUrl)
+                val url = postDetailBean?.forumTopicUrl
+                    ?: "http://bbs.uestc.edu.cn/forum.php?mod=viewthread&tid=$topicId"
+                ClipBoardUtil.copyToClipBoard(this, url)
             }
             R.id.open_link -> {
-                CommonUtil.openBrowser(this, "http://bbs.uestc.edu.cn/forum.php?mod=viewthread&tid=$topicId")
+                val url = postDetailBean?.forumTopicUrl
+                    ?: "http://bbs.uestc.edu.cn/forum.php?mod=viewthread&tid=$topicId"
+                CommonUtil.openBrowser(this, url)
             }
             R.id.delete -> {
                 val bundle = Bundle().apply {
