@@ -27,6 +27,7 @@ import io.reactivex.disposables.Disposable
 import okhttp3.ResponseBody
 import org.jsoup.Jsoup
 import org.litepal.LitePal
+import android.util.Log
 
 /**
  * Created by sca_tl on 2023/1/13 9:37
@@ -89,6 +90,25 @@ class CommentPresenter: BaseVBPresenter<CommentView>() {
                     mCompositeDisposable?.add(d)
                 }
             })
+    }
+
+    fun getDiscoursePostsByIds(topicId: Int, postIds: List<Int>) {
+        Log.d("CommentPresenter", "getDiscoursePostsByIds topicId=$topicId size=${postIds.size} ids=${postIds.joinToString(",")}")
+        discoursePostModel.getPostsByIds(topicId, postIds, object : Observer<List<PostDetailBean.ListBean>>() {
+            override fun OnSuccess(list: List<PostDetailBean.ListBean>) {
+                mView?.onAppendDiscoursePosts(list)
+            }
+
+            override fun onError(e: ResponseThrowable) {
+                mView?.onGetPostCommentError(e.message, ApiConstant.Code.ERROR_CODE)
+            }
+
+            override fun OnCompleted() {}
+
+            override fun OnDisposable(d: Disposable) {
+                mCompositeDisposable?.add(d)
+            }
+        })
     }
 
     fun stickReply(formHash: String?, fid: Int, tid: Int, stick: Boolean, replyId: Int) {

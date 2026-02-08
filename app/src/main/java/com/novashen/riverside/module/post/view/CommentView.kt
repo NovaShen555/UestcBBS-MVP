@@ -9,6 +9,7 @@ import com.novashen.riverside.entity.PostDetailBean
 interface CommentView: BaseView {
     fun onGetPostCommentSuccess(postDetailBean: PostDetailBean)
     fun onGetPostCommentError(msg: String?, code: Int)
+    fun onAppendDiscoursePosts(posts: List<PostDetailBean.ListBean>)
     fun onAppendPost(replyPostsId: Int, tid: Int)
     fun onSupportSuccess(action: String, position: Int)
     fun onSupportError(msg: String?)

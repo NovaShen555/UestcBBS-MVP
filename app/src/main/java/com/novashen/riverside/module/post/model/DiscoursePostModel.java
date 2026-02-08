@@ -65,6 +65,44 @@ public class DiscoursePostModel {
     }
 
     /**
+     * 通过 post_ids 获取额外楼层内容
+     */
+    public void getPostsByIds(int topicId, java.util.List<Integer> postIds, Observer<java.util.List<PostDetailBean.ListBean>> observer) {
+        DiscourseRetrofitUtil.getInstance()
+                .getApiService()
+                .getPostsByIds(topicId, postIds)
+                .subscribeOn(Schedulers.io())
+                .map(response -> {
+                    if (response == null || response.postStream == null || response.postStream.posts == null) {
+                        return new java.util.ArrayList<PostDetailBean.ListBean>();
+                    }
+                    return DiscoursePostDetailConverter.convertPosts(response.postStream.posts, new java.util.HashMap<>(), false);
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new io.reactivex.Observer<java.util.List<PostDetailBean.ListBean>>() {
+                    @Override
+                    public void onSubscribe(io.reactivex.disposables.Disposable d) {
+                        observer.OnDisposable(d);
+                    }
+
+                    @Override
+                    public void onNext(java.util.List<PostDetailBean.ListBean> listBeans) {
+                        observer.OnSuccess(listBeans);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        observer.onError(ExceptionHelper.handleException(e));
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        observer.OnCompleted();
+                    }
+                });
+    }
+
+    /**
      * 创建新帖子
      * @param title 帖子标题
      * @param content 帖子内容

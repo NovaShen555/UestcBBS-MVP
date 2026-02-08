@@ -89,8 +89,12 @@ public class DiscoursePostDetailConverter {
             }
         }
 
-        // 转换回复列表
-        bean.list = convertPosts(response.postStream.posts, userMap);
+        if (response.postStream != null) {
+            bean.discoursePostStream = response.postStream.stream;
+        }
+
+        // 转换回复列表（跳过主题帖）
+        bean.list = convertPosts(response.postStream.posts, userMap, true);
         logDebug("Converted posts size=" + (bean.list != null ? bean.list.size() : 0));
 
         return bean;
@@ -218,7 +222,9 @@ public class DiscoursePostDetailConverter {
     /**
      * 转换回复列表
      */
-    private static List<PostDetailBean.ListBean> convertPosts(List<TopicDetailResponse.Post> posts, Map<Integer, TopicDetailResponse.Participant> userMap) {
+    public static List<PostDetailBean.ListBean> convertPosts(List<TopicDetailResponse.Post> posts,
+                                                            Map<Integer, TopicDetailResponse.Participant> userMap,
+                                                            boolean skipFirst) {
         List<PostDetailBean.ListBean> list = new ArrayList<>();
 
         if (posts == null || posts.isEmpty()) {
@@ -232,7 +238,8 @@ public class DiscoursePostDetailConverter {
         }
 
         // 跳过第一个帖子（主题帖），从第二个开始是回复
-        for (int i = 1; i < posts.size(); i++) {
+        int startIndex = skipFirst ? 1 : 0;
+        for (int i = startIndex; i < posts.size(); i++) {
             TopicDetailResponse.Post post = posts.get(i);
             PostDetailBean.ListBean reply = new PostDetailBean.ListBean();
 
@@ -302,6 +309,11 @@ public class DiscoursePostDetailConverter {
         }
 
         return list;
+    }
+
+    public static List<PostDetailBean.ListBean> convertPosts(List<TopicDetailResponse.Post> posts,
+                                                            Map<Integer, TopicDetailResponse.Participant> userMap) {
+        return convertPosts(posts, userMap, true);
     }
 
     /**

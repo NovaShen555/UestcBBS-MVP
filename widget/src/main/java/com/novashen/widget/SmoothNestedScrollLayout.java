@@ -109,23 +109,23 @@ public class SmoothNestedScrollLayout extends LinearLayout implements NestedScro
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
                                int dxUnconsumed, int dyUnconsumed, int type) {
         if (type == ViewCompat.TYPE_TOUCH) {
-            Log.d(TAG, "onNestedScroll ignore touch " + type);
+//            Log.d(TAG, "onNestedScroll ignore touch " + type);
             return;
         }
         if (dyUnconsumed == 0) {
-            Log.d(TAG, "onNestedScroll ignore dy = 0");
+//            Log.d(TAG, "onNestedScroll ignore dy = 0");
             return;
         }
         int consumedY = consumeY(target, dyUnconsumed);
         if (consumedY != 0) {
-            Log.d(TAG, "onNestedScroll type " + type + " consumed " + consumedY);
+//            Log.d(TAG, "onNestedScroll type " + type + " consumed " + consumedY);
             scrollBy(0, consumedY);
         } else {
             // 这步很必要，这里表示子view和父view都不消耗这个fling了，必须让子view停掉冗余的fling。否者这一次
             // fling会自然慢慢结束，这个过程又没有真实的滚动。这期间如果再次触发一次别的scroll，就会导致同时有
             // 两个scroll，引起滑动冲突。同理在这期间，我们在on touch里也做了这样的检测判断，确保不会发生冲突。
             // 理论上，在onTouchEvent里做同样的处理已经足够避免冲突，但这里仍保留以结束掉fling避免浪费CPU。
-            Log.d(TAG, "onNestedScroll stop it type " + type);
+//            Log.d(TAG, "onNestedScroll stop it type " + type);
             ViewCompat.stopNestedScroll(target, type);
         }
     }
@@ -134,12 +134,12 @@ public class SmoothNestedScrollLayout extends LinearLayout implements NestedScro
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         int consumedY = consumeY(target, dy);
         if (consumedY != 0) {
-            Log.d(TAG, "onNestedPreScroll type " + type + " consumed " + consumedY);
+//            Log.d(TAG, "onNestedPreScroll type " + type + " consumed " + consumedY);
             scrollBy(0, consumedY);
             consumed[1] = consumedY;
             return;
         }
-        Log.d(TAG, "onNestedPreScroll unconsumed type " + type);
+//        Log.d(TAG, "onNestedPreScroll unconsumed type " + type);
     }
 
     protected int consumeY(View target, int dy) {

@@ -24,6 +24,7 @@ public class PostDetailBean implements MultiItemEntity {
     public String img_url;
     public String icon_url;
     public List<ListBean> list;
+    public List<Integer> discoursePostStream;
     public PostWebBean postWebBean;
 
     public static class HeadBean {

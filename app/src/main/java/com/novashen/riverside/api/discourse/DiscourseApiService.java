@@ -85,6 +85,13 @@ public interface DiscourseApiService {
                                                             @Path("child_id") int childId,
                                                             @Query("page") int page);
 
+        /**
+         * 获取指定帖子 ID 的内容列表
+         */
+        @GET("t/{topic_id}/posts.json")
+        Observable<TopicDetailResponse> getPostsByIds(@Path("topic_id") int topicId,
+                                                                                                  @Query("post_ids[]") List<Integer> postIds);
+
     /**
      * 获取当前用户信息
      */

@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.util.Log
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.novashen.riverside.R
 import com.novashen.riverside.annotation.PostAppendType
@@ -44,6 +45,8 @@ import org.greenrobot.eventbus.EventBus
 
 class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCommentBinding>(), CommentView {
 
+    private val logTag = "CommentFragment"
+
     private var page = 1
     private var count = 0
     private var topicId = 0
@@ -57,6 +60,13 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
     private lateinit var commentAdapter: PostCommentAdapter
     private var totalCommentData = mutableListOf<PostDetailBean.ListBean>()
     private var dataLoadedFromEvent = false // 标记是否已从 EventBus 加载数据
+    private var discoursePostStream: List<Int> = emptyList()
+    private val discourseLoadedIds = mutableSetOf<Int>()
+    private val discourseLoadedPositions = mutableSetOf<Int>()
+    private val discourseStreamIndexMap = mutableMapOf<Int, Int>()
+    private var isLoadingMoreDiscourse = false
+    private val discourseBatchSize = 20
+    private var nextDiscourseStreamIndex = 0
 
     enum class SORT {
         DEFAULT, NEW, AUTHOR, FLOOR
@@ -91,9 +101,15 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
         mBinding.recyclerView.apply {
             layoutAnimation = AnimationUtils.loadLayoutAnimation(context, R.anim.layout_animation_scale_in)
             adapter = commentAdapter
+            setHasFixedSize(true)
+            itemAnimator = null
+            setItemViewCacheSize(20)
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.COMMENT_FRAGMENT_SCROLL, dy))
+                    if (dy > 0) {
+                        tryLoadMoreDiscoursePosts()
+                    }
                 }
             })
         }
@@ -257,6 +273,20 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
             EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.COMMENT_REFRESHED,
                 CommentRefreshEvent(postDetailBean.topic.topic_id, postDetailBean.total_num)))
             commentAdapter.authorId = postDetailBean.topic.user_id
+            if (postDetailBean.discoursePostStream != null) {
+                discoursePostStream = postDetailBean.discoursePostStream
+                discourseStreamIndexMap.clear()
+                discoursePostStream.forEachIndexed { index, id ->
+                    discourseStreamIndexMap[id] = index
+                }
+            }
+            discourseLoadedIds.clear()
+            discourseLoadedPositions.clear()
+            postDetailBean.topic?.let { discourseLoadedIds.add(it.reply_posts_id) }
+            discourseLoadedPositions.add(1)
+            postDetailBean.list?.forEach { discourseLoadedIds.add(it.reply_posts_id) }
+            postDetailBean.list?.forEach { if (it.position > 0) discourseLoadedPositions.add(it.position) }
+            updateNextDiscourseStreamIndex()
             if (postDetailBean.list.isNullOrEmpty()) {
                 mBinding.statusView.error("还没有评论")
             } else {
@@ -331,6 +361,7 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
     }
 
     override fun onGetPostCommentError(msg: String?, code: Int) {
+        isLoadingMoreDiscourse = false
         if (page == 1) {
             if (commentAdapter.data.size != 0) {
                 showToast(msg, ToastType.TYPE_ERROR)
@@ -341,6 +372,103 @@ class CommentFragment : BaseVBFragment<CommentPresenter, CommentView, FragmentCo
         } else {
             mBinding.refreshLayout.finishLoadMore(false)
         }
+    }
+
+    override fun onAppendDiscoursePosts(posts: List<PostDetailBean.ListBean>) {
+//        Log.d(logTag, "onAppendDiscoursePosts size=${posts.size} isLoading=$isLoadingMoreDiscourse nextIndex=$nextDiscourseStreamIndex streamSize=${discoursePostStream.size} loadedIds=${discourseLoadedIds.size}")
+        isLoadingMoreDiscourse = false
+        if (posts.isEmpty()) {
+            return
+        }
+
+        val filtered = posts.filter { discourseLoadedIds.add(it.reply_posts_id) }
+//        Log.d(logTag, "onAppendDiscoursePosts filteredSize=${filtered.size} afterLoadedIds=${discourseLoadedIds.size}")
+        if (filtered.isEmpty()) {
+            updateNextDiscourseStreamIndex()
+            return
+        }
+
+        val existingIds = commentAdapter.data.map { it.reply_posts_id }.toHashSet()
+        val existingPositions = commentAdapter.data.mapNotNull { if (it.position > 0) it.position else null }.toHashSet()
+        val uniqueToAppend = filtered.filter {
+            val positionOk = if (it.position > 0) discourseLoadedPositions.add(it.position) else true
+            val notInAdapter = !existingIds.contains(it.reply_posts_id)
+            val positionNotInAdapter = it.position <= 0 || !existingPositions.contains(it.position)
+            positionOk && notInAdapter && positionNotInAdapter
+        }
+
+        if (uniqueToAppend.isNotEmpty()) {
+            totalCommentData.addAll(uniqueToAppend)
+            commentAdapter.totalCommentData = totalCommentData
+            commentAdapter.addData(uniqueToAppend, false)
+        }
+        updateNextDiscourseStreamIndex()
+    }
+
+    private fun tryLoadMoreDiscoursePosts() {
+//        Log.d(logTag, "tryLoadMoreDiscoursePosts enter dataLoaded=$dataLoadedFromEvent isLoading=$isLoadingMoreDiscourse nextIndex=$nextDiscourseStreamIndex streamSize=${discoursePostStream.size} loadedIds=${discourseLoadedIds.size}")
+        if (!dataLoadedFromEvent || discoursePostStream.isEmpty()) {
+            return
+        }
+        if (isLoadingMoreDiscourse) {
+            return
+        }
+
+        val layoutManager = mBinding.recyclerView.layoutManager as? LinearLayoutManager ?: return
+        val lastVisible = layoutManager.findLastVisibleItemPosition()
+        if (lastVisible < commentAdapter.data.size - 6) {
+            return
+        }
+
+        if (nextDiscourseStreamIndex >= discoursePostStream.size) {
+            return
+        }
+
+        val batch = buildNextDiscourseBatch()
+//        Log.d(logTag, "tryLoadMoreDiscoursePosts batchSize=${batch.size} batchIds=${batch.joinToString(",")} nextIndex=$nextDiscourseStreamIndex")
+        if (batch.isEmpty()) {
+            updateNextDiscourseStreamIndex()
+            return
+        }
+        isLoadingMoreDiscourse = true
+        mPresenter?.getDiscoursePostsByIds(topicId, batch)
+    }
+
+    private fun updateNextDiscourseStreamIndex() {
+//        Log.d(logTag, "updateNextDiscourseStreamIndex start nextIndex=$nextDiscourseStreamIndex streamSize=${discoursePostStream.size} loadedIds=${discourseLoadedIds.size}")
+        var index = nextDiscourseStreamIndex
+        while (index < discoursePostStream.size) {
+            val id = discoursePostStream[index]
+            if (!discourseLoadedIds.contains(id)) {
+                break
+            }
+            index++
+        }
+        nextDiscourseStreamIndex = index
+//        Log.d(logTag, "updateNextDiscourseStreamIndex end nextIndex=$nextDiscourseStreamIndex")
+    }
+
+    private fun buildNextDiscourseBatch(): List<Int> {
+        if (discoursePostStream.isEmpty()) {
+            return emptyList()
+        }
+
+        updateNextDiscourseStreamIndex()
+        if (nextDiscourseStreamIndex >= discoursePostStream.size) {
+            return emptyList()
+        }
+
+        val batch = mutableListOf<Int>()
+        var index = nextDiscourseStreamIndex
+        while (index < discoursePostStream.size && batch.size < discourseBatchSize) {
+            val id = discoursePostStream[index]
+            if (!discourseLoadedIds.contains(id)) {
+                batch.add(id)
+            }
+            index++
+        }
+//        Log.d(logTag, "buildNextDiscourseBatch nextIndex=$nextDiscourseStreamIndex batchSize=${batch.size} loadedIds=${discourseLoadedIds.size}")
+        return batch
     }
 
     override fun onAppendPost(replyPostsId: Int, tid: Int) {
