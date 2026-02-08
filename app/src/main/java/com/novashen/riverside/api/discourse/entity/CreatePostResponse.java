@@ -10,6 +10,9 @@ public class CreatePostResponse {
     public Post post;
     public boolean success;
 
+    @SerializedName("topic_id")
+    public int topicId;
+
     public static class Post {
         public int id;
         public String name;

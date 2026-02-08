@@ -225,7 +225,13 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
      * @param categoryId 板块ID
      * @param title 帖子标题
      */
-    public void sendDiscoursePost(ContentEditor contentEditor, int categoryId, String title) {
+    public void sendDiscoursePost(ContentEditor contentEditor,
+                                  int categoryId,
+                                  String title,
+                                  List<String> pollOptions,
+                                  int pollChoices,
+                                  boolean pollVisible,
+                                  boolean pollShowVoters) {
         // 从ContentEditor中提取纯文本内容
         StringBuilder rawContent = new StringBuilder();
         try {
@@ -243,11 +249,25 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
             return;
         }
 
+        String content = rawContent.toString();
+        if (content.trim().isEmpty()) {
+            content = " ";
+        }
+        String pollBlock = buildDiscoursePollBlock(title, pollOptions, pollChoices, pollVisible, pollShowVoters);
+        if (!pollBlock.isEmpty()) {
+            if (!content.isEmpty()) {
+                content = content + "\n\n" + pollBlock;
+            } else {
+                content = pollBlock;
+            }
+        }
+
         // 调用Discourse API发表帖子
-        discoursePostModel.createNewTopic(title, rawContent.toString(), categoryId,
+        discoursePostModel.createNewTopic(title, content, categoryId,
                 new Observer<CreatePostResponse>() {
                     @Override
                     public void OnSuccess(CreatePostResponse response) {
+                        view.onSendDiscoursePostSuccess(response);
                         // 创建一个SendPostBean来兼容现有的回调接口
                         SendPostBean sendPostBean = new SendPostBean();
                         sendPostBean.rs = ApiConstant.Code.SUCCESS_CODE;
@@ -277,6 +297,43 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
                         disposable.add(d);
                     }
                 });
+    }
+
+    private String buildDiscoursePollBlock(String postTitle,
+                                           List<String> pollOptions,
+                                           int pollChoices,
+                                           boolean pollVisible,
+                                           boolean pollShowVoters) {
+        if (pollOptions == null || pollOptions.size() == 0) return "";
+
+        StringBuilder sb = new StringBuilder();
+        String pollName = "poll1";
+        String results = pollVisible ? "on_vote" : "on_close";
+        String pollType = pollChoices > 1 ? "multiple" : "regular";
+
+        sb.append("[poll ");
+        sb.append("type=").append(pollType).append(" ");
+        sb.append("results=").append(results).append(" ");
+        sb.append("public=").append(pollShowVoters).append(" ");
+        sb.append("name=").append(pollName).append(" ");
+        sb.append("chartType=bar");
+
+        if ("multiple".equals(pollType)) {
+            sb.append(" max=").append(pollChoices).append(" min=1");
+        }
+        sb.append("]\n");
+
+        if (postTitle != null && !postTitle.isEmpty()) {
+            sb.append("# ").append(postTitle).append("\n\n");
+        }
+
+        for (String option : pollOptions) {
+            if (option != null && !option.trim().isEmpty()) {
+                sb.append("* ").append(option.trim()).append("\n");
+            }
+        }
+        sb.append("\n[/poll]");
+        return sb.toString();
     }
 
     /**

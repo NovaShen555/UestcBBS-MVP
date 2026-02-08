@@ -40,7 +40,7 @@ class ViewOriginCommentFragment: BaseVBBottomFragment<ViewOriginCommentPresenter
     }
 
     override fun initView() {
-        val postContentAdapter = PostContentAdapter(requireContext(), mTopicId, null)
+        val postContentAdapter = PostContentAdapter(requireContext(), mTopicId, null, null)
         val data = JsonUtil.modelListA2B(mData.reply_content, ContentViewBean::class.java, mData.reply_content.size)
         mBinding.recyclerView.adapter = postContentAdapter
         postContentAdapter.data = data

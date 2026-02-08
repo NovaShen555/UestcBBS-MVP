@@ -121,6 +121,24 @@ class DiscoursePostDetailPresenter : NewPostDetailPresenter() {
         })
     }
 
+    fun votePoll(postId: Int, pollName: String, optionIds: List<String>) {
+        discoursePostModel.votePoll(postId, pollName, optionIds, object : Observer<com.novashen.riverside.api.discourse.entity.PollVoteResponse>() {
+            override fun OnSuccess(response: com.novashen.riverside.api.discourse.entity.PollVoteResponse) {
+                mView?.onVoteSuccess(response)
+            }
+
+            override fun onError(e: ResponseThrowable) {
+                mView?.onVoteError(e.message)
+            }
+
+            override fun OnCompleted() {}
+
+            override fun OnDisposable(d: Disposable) {
+                mCompositeDisposable?.add(d)
+            }
+        })
+    }
+
     override fun bookmark(postId: Int, bookmarked: Boolean, bookmarkId: Int) {
         if (bookmarked) {
             if (bookmarkId <= 0) {

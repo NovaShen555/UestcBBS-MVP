@@ -33,6 +33,7 @@ import com.luck.picture.lib.PictureSelector;
 import com.luck.picture.lib.config.PictureMimeType;
 import com.luck.picture.lib.entity.LocalMedia;
 import com.novashen.riverside.R;
+import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.annotation.ToastType;
 import com.novashen.riverside.base.BaseActivity;
 import com.novashen.riverside.base.BaseEvent;
@@ -110,6 +111,7 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
     private static final int ADD_ATTACHMENT_REQUEST = 120;
 
     private int currentBoardId, currentFilterId;
+    private int lastCreatedTopicId = 0;
     private String currentBoardName, currentFilterName;
     private long createTime;
     private String currentTitle, currentContent;
@@ -260,11 +262,10 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
             pollLayout.setVisibility(View.VISIBLE);
             createPostPollAdapter.setNewData(currentPollOptions);
             String a = "可选" + currentPollChoice + "项，";
-            String b = "有效期" + currentPollExp + "天，";
             String c = "投票" + (currentPollVisible ? "后结果可见，" : "前结果可见");
             String d = (currentPollShowVoters ? "公开" : "不公开") + "投票参与人";
 
-            pollDesp.setText(new StringBuilder().append(a).append(b).append(c).append(d));
+            pollDesp.setText(new StringBuilder().append(a).append(c).append(d));
         } else {
             currentPollOptions = new ArrayList<>();
         }
@@ -317,7 +318,6 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
             if (createPostPollAdapter.getData().size() != 0) {
                 bundle.putBoolean(Constant.IntentKey.POLL_VISIBLE, currentPollVisible);
                 bundle.putBoolean(Constant.IntentKey.POLL_SHOW_VOTERS, currentPollShowVoters);
-                bundle.putInt(Constant.IntentKey.POLL_EXPIRATION, currentPollExp);
                 bundle.putInt(Constant.IntentKey.POLL_CHOICES, currentPollChoice);
                 bundle.putStringArrayList(Constant.IntentKey.POLL_OPTIONS, (ArrayList<String>) createPostPollAdapter.getData());
             }
@@ -386,13 +386,17 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
         // 全部使用Discourse API发帖
         if (TextUtils.isEmpty(postTitle.getText().toString())) {
             showToast("请输入帖子标题", ToastType.TYPE_ERROR);
-        } else if (contentEditor.isEditorEmpty()) {
-            showToast("请输入帖子内容", ToastType.TYPE_ERROR);
         } else {
             progressDialog.setMessage("正在发表帖子，请稍候...");
             progressDialog.show();
 
-            presenter.sendDiscoursePost(contentEditor, currentBoardId, postTitle.getText().toString());
+                    presenter.sendDiscoursePost(contentEditor,
+                    currentBoardId,
+                    postTitle.getText().toString(),
+                    currentPollOptions,
+                    currentPollChoice,
+                    currentPollVisible,
+                    currentPollShowVoters);
         }
     }
 
@@ -415,19 +419,40 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
     public void onSendPostSuccessViewPost() {
         progressDialog.show();
         progressDialog.setMessage("请稍候...");
-        presenter.userPost(SharePrefUtil.getUid(this));
+        if (lastCreatedTopicId > 0) {
+            Intent intent = new Intent(this, NewPostDetailActivity.class);
+            intent.putExtra(Constant.IntentKey.TOPIC_ID, lastCreatedTopicId);
+            startActivity(intent);
+            progressDialog.dismiss();
+            finish();
+        } else {
+            presenter.userPost(SharePrefUtil.getUid(this));
+        }
     }
 
     @Override
     public void onSendPostSuccess(SendPostBean sendPostBean) {
         sendPostSuccess = true;
         progressDialog.dismiss();
-
         if (currentAnonymous) {
             ToastUtil.showToast(this, "发帖成功", ToastType.TYPE_SUCCESS);
             finish();
         } else {
             presenter.showCreatePostSuccessDialog(this);
+        }
+    }
+
+    @Override
+    public void onSendDiscoursePostSuccess(CreatePostResponse response) {
+        if (response == null) {
+            return;
+        }
+        if (response.topicId > 0) {
+            lastCreatedTopicId = response.topicId;
+            return;
+        }
+        if (response.post != null && response.post.topicId > 0) {
+            lastCreatedTopicId = response.post.topicId;
         }
     }
 
@@ -612,17 +637,15 @@ public class CreatePostActivity extends BaseActivity<CreatePostPresenter> implem
             BaseEvent.AddPoll addPoll = (BaseEvent.AddPoll)baseEvent.eventData;
             currentPollOptions = addPoll.pollOptions;
             currentPollChoice = addPoll.pollChoice;
-            currentPollExp = addPoll.pollExp;
             currentPollVisible = addPoll.pollVisible;
             currentPollShowVoters = addPoll.showVoters;
 
             createPostPollAdapter.setNewData(addPoll.pollOptions);
 
             String a = "可选" + addPoll.pollChoice + "项，";
-            String b = "有效期" + addPoll.pollExp + "天，";
             String c = "投票" + (addPoll.pollVisible ? "后结果可见，" : "前结果可见，");
             String d = (addPoll.showVoters ? "公开" : "不公开") + "投票参与人";
-            pollDesp.setText(new StringBuilder().append(a).append(b).append(c).append(d));
+            pollDesp.setText(new StringBuilder().append(a).append(c).append(d));
         }
     }
 

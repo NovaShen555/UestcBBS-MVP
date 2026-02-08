@@ -127,6 +127,15 @@ public class PostDetailBean implements MultiItemEntity {
         }
 
         public static class PollInfoBean implements MultiItemEntity {
+            public String title;
+            public boolean isDiscourse;
+            public String poll_name;
+            public int post_id;
+            public boolean showResults;
+            public boolean hasVoted;
+            public String results;
+            public int minChoices;
+            public int maxChoices;
             public String deadline;
             public int is_visible;
             public int voters;
@@ -138,6 +147,9 @@ public class PostDetailBean implements MultiItemEntity {
             public static class PollItemListBean {
                 public String name;
                 public int poll_item_id;
+                public String option_id;
+                public int votes;
+                public boolean chosen;
                 public int total_num;
                 public String percent;
             }

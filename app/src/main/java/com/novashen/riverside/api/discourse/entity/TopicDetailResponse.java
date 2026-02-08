@@ -170,6 +170,39 @@ public class TopicDetailResponse {
 
         @SerializedName("reply_to_user")
         public ReplyToUser replyToUser;
+
+        @SerializedName("polls_votes")
+        public java.util.Map<String, java.util.List<String>> pollsVotes;
+
+        @SerializedName("polls")
+        public List<Poll> polls;
+    }
+
+    public static class Poll {
+        public int id;
+        public String name;
+        public String type;
+        public String status;
+        @SerializedName("public")
+        public boolean publicResult;
+        public boolean dynamic;
+        public String results;
+        public int min;
+        public int max;
+
+        @SerializedName("chart_type")
+        public String chartType;
+
+        public String title;
+        public int voters;
+        public List<PollOption> options;
+    }
+
+    public static class PollOption {
+        public String id;
+        public String html;
+        public int votes;
+        public boolean chosen;
     }
 
     public static class ActionSummary {

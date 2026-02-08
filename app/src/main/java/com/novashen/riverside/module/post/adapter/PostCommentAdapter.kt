@@ -158,7 +158,7 @@ class PostCommentAdapter(layoutResId: Int, onPreload: (() -> Unit)? = null) :
             level.visibility = View.GONE
         }
 
-        contentRv.adapter = PostContentAdapter(mContext, topicId, null).apply {
+        contentRv.adapter = PostContentAdapter(mContext, topicId, null, null).apply {
             type = PostContentAdapter.TYPE.REPLY
             this.data = JsonUtil.modelListA2B(item.reply_content, ContentViewBean::class.java, item.reply_content.size)
             comments = totalCommentData
@@ -176,7 +176,7 @@ class PostCommentAdapter(layoutResId: Int, onPreload: (() -> Unit)? = null) :
                 } else {
                     quoteAvatar.load(data.icon)
                 }
-                quoteCommentRv.adapter = PostContentAdapter(mContext, topicId, null).apply {
+                quoteCommentRv.adapter = PostContentAdapter(mContext, topicId, null, null).apply {
                     comments = totalCommentData
                     type = PostContentAdapter.TYPE.QUOTE
                     this.data = JsonUtil.modelListA2B(data.reply_content, ContentViewBean::class.java, data.reply_content.size)

@@ -13,6 +13,7 @@ import com.novashen.riverside.api.discourse.entity.DiscourseUserBookmarksRespons
 import com.novashen.riverside.api.discourse.entity.LoginResponse;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
+import com.novashen.riverside.api.discourse.entity.PollVoteResponse;
 import com.novashen.riverside.api.discourse.entity.ChatChannelsResponse;
 import com.novashen.riverside.api.discourse.entity.ChatMessagesResponse;
 
@@ -169,6 +170,14 @@ public interface DiscourseApiService {
                 @Field("bookmarkable_id") int bookmarkableId,
                 @Field("bookmarkable_type") String bookmarkableType
         );
+
+            @FormUrlEncoded
+            @PUT("polls/vote")
+            Observable<PollVoteResponse> votePoll(
+                    @Field("post_id") int postId,
+                    @Field("poll_name") String pollName,
+                    @Field("options[]") List<String> optionIds
+            );
 
         @DELETE("bookmarks/{bookmark_id}.json")
         Observable<ResponseBody> deleteBookmark(@Path("bookmark_id") int bookmarkId);

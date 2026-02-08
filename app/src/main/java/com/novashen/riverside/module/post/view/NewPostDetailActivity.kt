@@ -43,6 +43,7 @@ import com.novashen.riverside.module.search.view.SearchActivity
 import com.novashen.riverside.module.user.view.UserDetailActivity
 import com.novashen.riverside.module.webview.view.WebViewActivity
 import com.novashen.riverside.util.*
+import android.util.Log
 import com.novashen.util.ImageUtil
 import com.novashen.util.ColorUtil
 import com.novashen.util.NumberUtil
@@ -340,10 +341,29 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
             EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.POST_DETAIL_LOADED, postDetailBean))
         }
 
+        val isDiscourse = postDetailBean.topic.poll_info?.isDiscourse == true
         postContentAdapter = PostContentAdapter(this, topicId,
             onVoteClick = {
-                mPresenter?.vote(topicId, postDetailBean.boardId, it)
-            }
+                if (isDiscourse) {
+                    val poll = postDetailBean.topic.poll_info
+                    val selectedOptionIds = poll?.poll_item_list
+                        ?.filter { item -> item.poll_item_id in it }
+                        ?.mapNotNull { item -> item.option_id }
+                        ?: emptyList()
+                    val pollName = poll?.poll_name
+                    val postId = poll?.post_id ?: 0
+                    if (selectedOptionIds.isNotEmpty() && !pollName.isNullOrBlank() && postId > 0) {
+                        (mPresenter as? com.novashen.riverside.module.post.presenter.DiscoursePostDetailPresenter)
+                            ?.votePoll(postId, pollName, selectedOptionIds)
+                    } else {
+                        showToast("投票参数无效", ToastType.TYPE_ERROR)
+                    }
+                } else {
+                    mPresenter?.vote(topicId, postDetailBean.boardId, it)
+                }
+            },
+            discoursePollInfo = postDetailBean.topic.poll_info,
+            isDiscourse = isDiscourse
         )
         postContentAdapter.type = PostContentAdapter.TYPE.TOPIC
         mBinding.contentRv.adapter = postContentAdapter
@@ -352,10 +372,12 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
             ContentViewBean::class.java, postDetailBean.topic.content.size
         )
         postDetailBean.topic.poll_info?.let { poll ->
-            data.add(ContentViewBean().apply {
-                type = ContentDataType.TYPE_VOTE
-                mPollInfoBean = poll
-            })
+            if (!poll.isDiscourse) {
+                data.add(ContentViewBean().apply {
+                    type = ContentDataType.TYPE_VOTE
+                    mPollInfoBean = poll
+                })
+            }
         }
         postContentAdapter.data = data
 
@@ -498,6 +520,42 @@ class NewPostDetailActivity : BaseVBActivity<NewPostDetailPresenter, NewPostDeta
             }
             postContentAdapter.notifyItemChanged(postContentAdapter.mData.size - 1)
         }
+    }
+
+    override fun onVoteSuccess(pollVoteResponse: com.novashen.riverside.api.discourse.entity.PollVoteResponse) {
+        val poll = pollVoteResponse.poll ?: return
+        Log.d("DiscoursePoll", "vote success: name=${poll.name}, voters=${poll.voters}, options=${poll.options?.size ?: 0}")
+        poll.options?.forEach { option ->
+            Log.d("DiscoursePoll", "option id=${option.id}, html=${option.html}, votes=${option.votes}, chosen=${option.chosen}")
+        }
+
+        val index = postContentAdapter.mData.indexOfFirst {
+            it.type == ContentDataType.TYPE_VOTE && it.mPollInfoBean?.isDiscourse == true
+        }
+        if (index == -1) return
+
+        val pollInfo = postContentAdapter.mData[index].mPollInfoBean ?: return
+        pollInfo.voters = poll.voters
+        pollInfo.hasVoted = true
+        pollInfo.showResults = "on_vote".equals(poll.results, true) || pollVoteResponse.vote?.isNotEmpty() == true
+        pollInfo.poll_status = 1
+
+        poll.options?.forEach { option ->
+            pollInfo.poll_item_list?.forEach { origin ->
+                if (origin.option_id == option.id) {
+                    origin.votes = option.votes
+                    origin.total_num = if (pollInfo.showResults) option.votes else 0
+                    origin.chosen = option.chosen || pollVoteResponse.vote?.contains(option.id) == true
+                }
+            }
+        }
+        if (pollInfo.showResults && pollInfo.voters > 0) {
+            pollInfo.poll_item_list?.forEach { origin ->
+                val percent = origin.total_num * 100f / pollInfo.voters
+                origin.percent = String.format("%.0f%%", percent)
+            }
+        }
+        postContentAdapter.notifyItemChanged(index)
     }
 
     override fun onVoteError(msg: String?) {

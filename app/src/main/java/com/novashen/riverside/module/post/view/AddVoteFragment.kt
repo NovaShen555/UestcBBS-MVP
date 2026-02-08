@@ -34,7 +34,6 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
     private lateinit var voteAdapter: AddVoteAdapter
     private lateinit var mItemTouchHelper: ItemTouchHelper
     private var mOptions = DEFAULT_OPTIONS
-    private var mExpirationDays = 3
     private var mMaxChoices = 1
     private var mVisibleAfterVoted = false
     private var mShowVoters = false
@@ -53,16 +52,12 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
     override fun getBundle(bundle: Bundle?) {
         bundle?.let {
             mOptions = it.getStringArrayList(Constant.IntentKey.POLL_OPTIONS) ?: DEFAULT_OPTIONS
-            mExpirationDays = it.getInt(Constant.IntentKey.POLL_EXPIRATION, 3)
             mMaxChoices = it.getInt(Constant.IntentKey.POLL_CHOICES, 1)
             mVisibleAfterVoted = it.getBoolean(Constant.IntentKey.POLL_VISIBLE, false)
             mShowVoters = it.getBoolean(Constant.IntentKey.POLL_SHOW_VOTERS, false)
 
             if (mOptions.size < 2) {
                 mOptions = DEFAULT_OPTIONS
-            }
-            if (mExpirationDays <= 0) {
-                mExpirationDays = 3
             }
             if (mMaxChoices <= 0 || mMaxChoices > mOptions.size) {
                 mMaxChoices = 1
@@ -71,8 +66,6 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
     }
 
     override fun initView() {
-        mBinding.expirationDaysAddBtn.setOnClickListener(this)
-        mBinding.expirationDaysRemoveBtn.setOnClickListener(this)
         mBinding.choicesCountAddBtn.setOnClickListener(this)
         mBinding.choicesCountRemoveBtn.setOnClickListener(this)
         mBinding.confirmBtn.setOnClickListener(this)
@@ -97,7 +90,6 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
         mItemTouchHelper = ItemTouchHelper(dragHelper)
         mItemTouchHelper.attachToRecyclerView(mBinding.optionsRv)
 
-        mBinding.expirationDays.text = mExpirationDays.toString()
         mBinding.choicesCount.text = mMaxChoices.toString()
 
         voteAdapter.setNewData(mOptions)
@@ -105,24 +97,6 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
 
     override fun onClick(v: View) {
         when(v) {
-            mBinding.expirationDaysAddBtn -> {
-                if (mExpirationDays >= 3) {
-                    mExpirationDays = 3
-                    mBinding.expirationDays.text = "3"
-                } else {
-                    mExpirationDays ++
-                    mBinding.expirationDays.text = mExpirationDays.toString()
-                }
-            }
-            mBinding.expirationDaysRemoveBtn -> {
-                if (mExpirationDays <= 1) {
-                    mExpirationDays = 1
-                    mBinding.expirationDays.text = "1"
-                } else {
-                    mExpirationDays --
-                    mBinding.expirationDays.text = mExpirationDays.toString()
-                }
-            }
             mBinding.choicesCountAddBtn -> {
                 if (mMaxChoices >= voteAdapter.data.size) {
                     mMaxChoices = voteAdapter.data.size
@@ -203,7 +177,7 @@ class AddVoteFragment: BaseVBFragment<AddVotePresenter, AddVoteView, FragmentAdd
             val addPoll = AddPoll()
             addPoll.pollOptions = voteAdapter.data
             addPoll.pollChoice = NumberUtil.parseInt(mBinding.choicesCount.text.toString(), 1)
-            addPoll.pollExp = NumberUtil.parseInt(mBinding.expirationDays.text.toString(), 3)
+            addPoll.pollExp = 0
             addPoll.pollVisible = mBinding.visibleAfterVoteBtn.isChecked
             addPoll.showVoters = mBinding.showVotersBtn.isChecked
             EventBus.getDefault().post(BaseEvent(BaseEvent.EventCode.ADD_POLL, addPoll))

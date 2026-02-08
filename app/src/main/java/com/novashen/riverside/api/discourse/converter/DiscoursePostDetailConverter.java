@@ -142,6 +142,74 @@ public class DiscoursePostDetailConverter {
 
             // 解析帖子内容
             topic.content = parseContent(firstPost.cooked);
+
+            // 解析投票（从 post.polls 获取）
+            if (firstPost.polls != null && !firstPost.polls.isEmpty()) {
+                TopicDetailResponse.Poll poll = firstPost.polls.get(0);
+                PostDetailBean.TopicBean.PollInfoBean pollInfo = new PostDetailBean.TopicBean.PollInfoBean();
+                pollInfo.title = poll.title;
+                pollInfo.voters = poll.voters;
+                pollInfo.poll_status = "open".equalsIgnoreCase(poll.status) ? 2 : 4;
+                pollInfo.type = "multiple".equalsIgnoreCase(poll.type) ? Math.max(poll.max, 2) : 1;
+                pollInfo.isDiscourse = true;
+                pollInfo.poll_name = poll.name;
+                pollInfo.post_id = firstPost.id;
+                pollInfo.results = poll.results;
+                pollInfo.minChoices = poll.min <= 0 ? 1 : poll.min;
+                pollInfo.maxChoices = poll.max <= 0 ? pollInfo.type : poll.max;
+
+                boolean hasVoted = firstPost.pollsVotes != null
+                    && poll.name != null
+                    && firstPost.pollsVotes.get(poll.name) != null
+                    && !firstPost.pollsVotes.get(poll.name).isEmpty();
+                pollInfo.hasVoted = hasVoted;
+                pollInfo.showResults = "on_vote".equalsIgnoreCase(poll.results) || hasVoted;
+                if (hasVoted) {
+                    pollInfo.poll_status = 1;
+                }
+
+                List<PostDetailBean.TopicBean.PollInfoBean.PollItemListBean> items = new ArrayList<>();
+                if (poll.options != null) {
+                    for (TopicDetailResponse.PollOption option : poll.options) {
+                        PostDetailBean.TopicBean.PollInfoBean.PollItemListBean item =
+                            new PostDetailBean.TopicBean.PollInfoBean.PollItemListBean();
+                        item.name = Jsoup.parse(option.html).text();
+                        item.poll_item_id = items.size() + 1;
+                        item.option_id = option.id;
+                        item.votes = option.votes;
+                        item.total_num = pollInfo.showResults ? option.votes : 0;
+                        if (hasVoted && firstPost.pollsVotes != null && poll.name != null) {
+                            java.util.List<String> voted = firstPost.pollsVotes.get(poll.name);
+                            item.chosen = voted != null && voted.contains(option.id);
+                        }
+                        item.percent = "0%";
+                        items.add(item);
+                    }
+                }
+                pollInfo.poll_item_list = items;
+                topic.poll_info = pollInfo;
+
+                if (pollInfo.showResults && pollInfo.voters > 0 && pollInfo.poll_item_list != null) {
+                    for (PostDetailBean.TopicBean.PollInfoBean.PollItemListBean item : pollInfo.poll_item_list) {
+                        float percent = (item.total_num * 100f) / pollInfo.voters;
+                        item.percent = String.format("%.0f%%", percent);
+                    }
+                }
+
+                logDebug("Parsed discourse poll: title=" + pollInfo.title +
+                    ", voters=" + pollInfo.voters +
+                    ", status=" + poll.status +
+                    ", hasVoted=" + hasVoted +
+                    ", options=" + (poll.options != null ? poll.options.size() : 0));
+                if (poll.options != null && !poll.options.isEmpty()) {
+                    StringBuilder optionNames = new StringBuilder();
+                    for (TopicDetailResponse.PollOption option : poll.options) {
+                        if (optionNames.length() > 0) optionNames.append(", ");
+                        optionNames.append(Jsoup.parse(option.html).text());
+                    }
+                    logDebug("Parsed discourse poll options: " + optionNames);
+                }
+            }
         }
 
         return topic;

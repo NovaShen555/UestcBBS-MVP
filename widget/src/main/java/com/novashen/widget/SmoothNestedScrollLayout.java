@@ -307,7 +307,7 @@ public class SmoothNestedScrollLayout extends LinearLayout implements NestedScro
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.d(TAG, "onMeasure height:" + MeasureSpec.getSize(heightMeasureSpec));
+//        Log.d(TAG, "onMeasure height:" + MeasureSpec.getSize(heightMeasureSpec));
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         if (mTopStableView.size() > 0) {
             mTopScrollHeight = 0;
@@ -323,10 +323,10 @@ public class SmoothNestedScrollLayout extends LinearLayout implements NestedScro
             if (mContentView != null) {
                 int innerOffsetHeight = calculateInnerOffsetHeight();
                 int contentMH = mContentView.getMeasuredHeight();
-                Log.d(TAG, "onMeasure content height:" + contentMH +
-                        " top:" + mTopScrollHeight +
-                        " total:" + getMeasuredHeight() + " inner:" + innerOffsetHeight +
-                        " outer:" + mOuterCoverTopHeight);
+//                Log.d(TAG, "onMeasure content height:" + contentMH +
+//                        " top:" + mTopScrollHeight +
+//                        " total:" + getMeasuredHeight() + " inner:" + innerOffsetHeight +
+//                        " outer:" + mOuterCoverTopHeight);
                 // 修改params.height的方式
 //                ViewGroup.LayoutParams params = mContentView.getLayoutParams();
 //                params.height = getMeasuredHeight() - innerOffsetHeight;
@@ -337,7 +337,7 @@ public class SmoothNestedScrollLayout extends LinearLayout implements NestedScro
                 }
                 mContentView.measure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(contentH, MeasureSpec.AT_MOST));
                 contentMH = mContentView.getMeasuredHeight();
-                Log.d(TAG, "onMeasure content adjusted height:" + contentMH);
+//                Log.d(TAG, "onMeasure content adjusted height:" + contentMH);
             }
             setMeasuredDimension(getMeasuredWidth(), mTopScrollHeight + getMeasuredHeight());
         }

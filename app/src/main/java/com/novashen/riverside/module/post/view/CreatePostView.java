@@ -1,5 +1,6 @@
 package com.novashen.riverside.module.post.view;
 
+import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.entity.AttachmentBean;
 import com.novashen.riverside.entity.CommonPostBean;
 import com.novashen.riverside.entity.SendPostBean;
@@ -16,6 +17,7 @@ import java.util.List;
  */
 public interface CreatePostView {
     void onSendPostSuccess(SendPostBean sendPostBean);
+    void onSendDiscoursePostSuccess(CreatePostResponse response);
     void onSendPostError(String msg);
     void onUploadSuccess(UploadResultBean uploadResultBean);
     void onUploadError(String msg);

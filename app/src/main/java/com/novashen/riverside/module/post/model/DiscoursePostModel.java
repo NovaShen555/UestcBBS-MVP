@@ -3,6 +3,7 @@ package com.novashen.riverside.module.post.model;
 import com.novashen.riverside.api.discourse.DiscourseRetrofitUtil;
 import com.novashen.riverside.api.discourse.converter.DiscoursePostDetailConverter;
 import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
+import com.novashen.riverside.api.discourse.entity.PollVoteResponse;
 import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.entity.PostDetailBean;
 import com.novashen.riverside.helper.ExceptionHelper;
@@ -241,6 +242,35 @@ public class DiscoursePostModel {
                                 new Exception(errorMessage.toString()),
                                 ExceptionHelper.ERROR.UNKNOWN
                         ));
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        observer.OnCompleted();
+                    }
+                });
+    }
+
+    public void votePoll(int postId, String pollName, java.util.List<String> optionIds, Observer<PollVoteResponse> observer) {
+        DiscourseRetrofitUtil.getInstance()
+                .getApiService()
+                .votePoll(postId, pollName, optionIds)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new io.reactivex.Observer<PollVoteResponse>() {
+                    @Override
+                    public void onSubscribe(io.reactivex.disposables.Disposable d) {
+                        observer.OnDisposable(d);
+                    }
+
+                    @Override
+                    public void onNext(PollVoteResponse pollVoteResponse) {
+                        observer.OnSuccess(pollVoteResponse);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        observer.onError(ExceptionHelper.handleException(e));
                     }
 
                     @Override

@@ -46,15 +46,22 @@ import com.novashen.widget.audioplay.AudioPlayService
 import com.novashen.widget.audioplay.AudioPlayer
 import com.novashen.widget.download.DownloadManager
 import com.novashen.widget.video.VideoPreViewManager
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import java.util.regex.Pattern
 
 /**
  * Created by sca_tl on 2022/12/6 14:13
  */
 @SuppressLint("NotifyDataSetChanged")
-class PostContentAdapter(val mContext: Context,
-                         val topicId: Int,
-                         val onVoteClick: ((ids: MutableList<Int>) -> Unit)?) :
+class PostContentAdapter @JvmOverloads constructor(
+    val mContext: Context,
+    val topicId: Int,
+    val onVoteClick: ((ids: MutableList<Int>) -> Unit)?,
+    private val discoursePollInfo: PostDetailBean.TopicBean.PollInfoBean? = null,
+    private val isDiscourse: Boolean = false
+) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -78,6 +85,8 @@ class PostContentAdapter(val mContext: Context,
     val mImages = mutableListOf<String>()
 
     val mWholeText = StringBuilder()
+
+    private var discoursePollConsumed = false
 
     private fun convertData(origin: List<ContentViewBean>): List<ContentViewBeanEx> {
         val result = mutableListOf<ContentViewBeanEx>()
@@ -124,20 +133,40 @@ class PostContentAdapter(val mContext: Context,
                 }
                 else -> {
                     if (it.type == ContentDataType.TYPE_TEXT) {
-                        mWholeText.append(it.infor)
+                        val splitItems = splitDiscoursePollItems(it.infor)
+                        if (splitItems != null) {
+                            splitItems.forEach { item ->
+                                if (item.type == ContentDataType.TYPE_TEXT) {
+                                    mWholeText.append(item.infor)
+                                }
+                                result.add(item)
+                            }
+                        } else {
+                            mWholeText.append(it.infor)
+                            result.add(ContentViewBeanEx().apply {
+                                type = it.type
+                                infor = it.infor
+                                url = it.url
+                                desc = it.desc
+                                originalInfo = it.originalInfo
+                                aid = it.aid
+                                mPollInfoBean = it.mPollInfoBean
+                            })
+                        }
+                    } else {
+                        if (it.type == ContentDataType.TYPE_URL) {
+                            mWholeText.append(it.url)
+                        }
+                        result.add(ContentViewBeanEx().apply {
+                            type = it.type
+                            infor = it.infor
+                            url = it.url
+                            desc = it.desc
+                            originalInfo = it.originalInfo
+                            aid = it.aid
+                            mPollInfoBean = it.mPollInfoBean
+                        })
                     }
-                    if (it.type == ContentDataType.TYPE_URL) {
-                        mWholeText.append(it.url)
-                    }
-                    result.add(ContentViewBeanEx().apply {
-                        type = it.type
-                        infor = it.infor
-                        url = it.url
-                        desc = it.desc
-                        originalInfo = it.originalInfo
-                        aid = it.aid
-                        mPollInfoBean = it.mPollInfoBean
-                    })
                 }
             }
         }
@@ -422,6 +451,93 @@ class PostContentAdapter(val mContext: Context,
         return result
     }
 
+    private fun splitDiscoursePollItems(html: String): List<ContentViewBeanEx>? {
+        if (!html.contains("class=\"poll\"") && !html.contains("class='poll'") && !html.contains("class=poll")) {
+            return null
+        }
+        return try {
+            val doc = Jsoup.parseBodyFragment(html)
+            val body = doc.body()
+            val items = mutableListOf<ContentViewBeanEx>()
+            val textBuffer = StringBuilder()
+
+            fun flushText() {
+                val text = textBuffer.toString().trim()
+                if (text.isNotBlank()) {
+                    items.add(ContentViewBeanEx().apply {
+                        type = ContentDataType.TYPE_TEXT
+                        infor = text
+                        originalInfo = text
+                    })
+                }
+                textBuffer.setLength(0)
+            }
+
+            for (node: Node in body.childNodes()) {
+                if (node is Element && node.hasClass("poll")) {
+                    flushText()
+                    val pollInfo = if (!discoursePollConsumed && discoursePollInfo?.isDiscourse == true) {
+                        discoursePollConsumed = true
+                        discoursePollInfo
+                    } else {
+                        parseDiscoursePoll(node)
+                    }
+                    if (pollInfo != null) {
+                        items.add(ContentViewBeanEx().apply {
+                            type = ContentDataType.TYPE_VOTE
+                            mPollInfoBean = pollInfo
+                        })
+                    } else {
+                        textBuffer.append(node.outerHtml())
+                    }
+                } else {
+                    textBuffer.append(node.outerHtml())
+                }
+            }
+            flushText()
+            if (items.isEmpty()) null else items
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseDiscoursePoll(pollElement: Element): PostDetailBean.TopicBean.PollInfoBean? {
+        return try {
+            val pollInfo = PostDetailBean.TopicBean.PollInfoBean()
+            pollInfo.title = pollElement.selectFirst(".poll-title")?.text()
+
+            val maxChoices = pollElement.attr("data-poll-maxchoices").toIntOrNull() ?: 0
+            val typeAttr = pollElement.attr("data-poll-type")
+            pollInfo.type = when {
+                maxChoices > 0 -> maxChoices
+                typeAttr.equals("multiple", true) -> 2
+                else -> 1
+            }
+
+            val votersText = pollElement.selectFirst(".poll-info_counts-count .info-number")?.text()
+            pollInfo.voters = votersText?.toIntOrNull() ?: 0
+
+            pollInfo.poll_status = 0
+            pollInfo.isDiscourse = true
+
+            val items = mutableListOf<PostDetailBean.TopicBean.PollInfoBean.PollItemListBean>()
+            val options = pollElement.select("li[data-poll-option-id]")
+            for ((index, option) in options.withIndex()) {
+                val item = PostDetailBean.TopicBean.PollInfoBean.PollItemListBean()
+                item.name = option.text()
+                item.poll_item_id = index + 1
+                item.total_num = 0
+                item.percent = "0%"
+                items.add(item)
+            }
+            pollInfo.poll_item_list = items
+            Log.d(TAG, "parseDiscoursePoll title=${pollInfo.title}, voters=${pollInfo.voters}, options=${items.size}")
+            pollInfo
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun safeLog(text: String?): String {
         if (text.isNullOrEmpty()) return "<empty>"
         val max = 2000
@@ -565,7 +681,14 @@ class PostContentAdapter(val mContext: Context,
         val voteData = mData[position].mPollInfoBean
         val adapter = ContentViewPollAdapter(R.layout.item_content_view_poll)
         holder.recyclerView.adapter = adapter
-        adapter.addPollData(voteData.poll_item_list, voteData.voters, voteData.poll_status)
+        val showResults = !voteData.isDiscourse || voteData.showResults
+        val totalVoters = if (showResults) voteData.voters else 0
+        val singleChoice = voteData.isDiscourse && voteData.type == 1
+        adapter.addPollData(voteData.poll_item_list, totalVoters, voteData.poll_status, singleChoice)
+
+        if (!voteData.title.isNullOrBlank()) {
+            holder.title.text = voteData.title
+        }
 
         when(voteData.poll_status) {
             1 -> {
@@ -576,6 +699,21 @@ class PostContentAdapter(val mContext: Context,
                 holder.dsp.text = mContext.resources.getString(R.string.can_vote, voteData.type)
                 holder.submit.visibility = View.VISIBLE
                 holder.submit.setOnClickListener {
+                    if (isDiscourse) {
+                        val selected = voteData.poll_item_list.filter { it.poll_item_id in adapter.pollItemIds }
+                        val min = if (voteData.minChoices > 0) voteData.minChoices else 1
+                        val max = if (voteData.maxChoices > 0) voteData.maxChoices else voteData.type
+                        if (selected.size < min) {
+                            ToastUtil.showToast(mContext, "至少选择${min}项", ToastType.TYPE_ERROR)
+                            return@setOnClickListener
+                        }
+                        if (selected.size > max) {
+                            ToastUtil.showToast(mContext, "至多选择${max}项", ToastType.TYPE_ERROR)
+                            return@setOnClickListener
+                        }
+                        onVoteClick?.invoke(selected.map { it.poll_item_id }.toMutableList())
+                        return@setOnClickListener
+                    }
                     when(adapter.pollItemIds.size) {
                         in Int.MIN_VALUE..0 -> {
                             ToastUtil.showToast(mContext, "至少选择1项", ToastType.TYPE_ERROR)
@@ -602,10 +740,12 @@ class PostContentAdapter(val mContext: Context,
         spannableString.setSpan(
             CustomClickableSpan(mContext, Constant.VIEW_VOTER_LINK.plus(topicId)),
             0, spannableString.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        holder.dsp.apply {
-            movementMethod = LinkMovementMethod.getInstance()
-            append("\n")
-            append(spannableString)
+        if (voteData.poll_status != 0 && !voteData.isDiscourse) {
+            holder.dsp.apply {
+                movementMethod = LinkMovementMethod.getInstance()
+                append("\n")
+                append(spannableString)
+            }
         }
     }
 
@@ -642,6 +782,7 @@ class PostContentAdapter(val mContext: Context,
         val recyclerView: RecyclerView = itemView.findViewById(R.id.recycler_view)
         val dsp: TextView = itemView.findViewById(R.id.dsp)
         val submit: MaterialButton = itemView.findViewById(R.id.submit)
+        val title: TextView = itemView.findViewById(R.id.title)
     }
 
     class AudioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

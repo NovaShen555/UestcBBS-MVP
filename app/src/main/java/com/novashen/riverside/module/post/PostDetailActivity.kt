@@ -9,6 +9,7 @@ import com.novashen.riverside.entity.FavoritePostResultBean
 import com.novashen.riverside.entity.PostDetailBean
 import com.novashen.riverside.entity.SupportResultBean
 import com.novashen.riverside.entity.VoteResultBean
+import com.novashen.riverside.api.discourse.entity.PollVoteResponse
 import com.novashen.riverside.module.post.presenter.NewPostDetailPresenter
 import com.novashen.riverside.module.post.view.CommentFragment
 import com.novashen.riverside.module.post.view.NewPostDetailView
@@ -80,6 +81,10 @@ class PostDetailActivity: BaseVBActivity<NewPostDetailPresenter, NewPostDetailVi
     }
 
     override fun onVoteError(msg: String?) {
+
+    }
+
+    override fun onVoteSuccess(pollVoteResponse: PollVoteResponse) {
 
     }
 
