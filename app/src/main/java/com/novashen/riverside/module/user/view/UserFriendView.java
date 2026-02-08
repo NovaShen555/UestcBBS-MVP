@@ -1,6 +1,8 @@
 package com.novashen.riverside.module.user.view;
 
-import com.novashen.riverside.entity.UserFriendBean;
+import com.novashen.riverside.api.discourse.entity.DiscourseFollowUser;
+
+import java.util.List;
 
 /**
  * author: sca_tl
@@ -8,6 +10,7 @@ import com.novashen.riverside.entity.UserFriendBean;
  * date: 2020/2/5 16:42
  */
 public interface UserFriendView {
-    void onGetUserFriendSuccess(UserFriendBean userFriendBean);
+    void onGetUserFriendSuccess(List<DiscourseFollowUser> userList);
     void onGetUserFriendError(String msg);
+    void onUserLastSeenLoaded(int position, String lastSeenAt);
 }

@@ -36,7 +36,10 @@
             android:layout_toEndOf="@id/item_user_friend_icon"
             android:layout_marginStart="10dp"
             android:layout_below="@id/item_user_friend_name"
-            android:layout_marginTop="5dp" />
+            android:layout_marginTop="5dp"
+            android:textColor="@color/text_color_dark"
+            android:textSize="12sp"
+            android:visibility="visible" />
 
     </RelativeLayout>
 

@@ -6,6 +6,7 @@ import com.novashen.riverside.api.discourse.entity.CreatePostRequest;
 import com.novashen.riverside.api.discourse.entity.CreatePostResponse;
 import com.novashen.riverside.api.discourse.entity.CsrfTokenResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserResponse;
+import com.novashen.riverside.api.discourse.entity.DiscourseFollowUser;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserSummaryResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserActionResponse;
 import com.novashen.riverside.api.discourse.entity.DiscourseUserBookmarksResponse;
@@ -14,6 +15,8 @@ import com.novashen.riverside.api.discourse.entity.TopicDetailResponse;
 import com.novashen.riverside.api.discourse.entity.TopicListResponse;
 import com.novashen.riverside.api.discourse.entity.ChatChannelsResponse;
 import com.novashen.riverside.api.discourse.entity.ChatMessagesResponse;
+
+import java.util.List;
 
 import io.reactivex.Observable;
 import okhttp3.ResponseBody;
@@ -121,6 +124,20 @@ public interface DiscourseApiService {
      */
     @GET("u/{username}/summary.json")
     Observable<DiscourseUserSummaryResponse> getUserSummary(@Path("username") String username);
+
+        /**
+         * 获取用户粉丝列表
+         * @param username 用户名
+         */
+        @GET("u/{username}/follow/followers")
+        Observable<List<DiscourseFollowUser>> getUserFollowers(@Path("username") String username);
+
+        /**
+         * 获取用户关注列表
+         * @param username 用户名
+         */
+        @GET("u/{username}/follow/following.json")
+        Observable<List<DiscourseFollowUser>> getUserFollowing(@Path("username") String username);
 
     @GET("topics/created-by/{username}.json")
     Observable<TopicListResponse> getUserTopics(@Path("username") String username);
