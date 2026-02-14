@@ -64,6 +64,10 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
 
     PostModel postModel = new PostModel();
     DiscoursePostModel discoursePostModel = new DiscoursePostModel();
+    
+    // Pattern for emoji format conversion, compiled once for better performance
+    private static final java.util.regex.Pattern EMOJI_PATTERN = 
+        java.util.regex.Pattern.compile("\\[([a-zA-Z]+):(\\d+)\\]");
 
     public void sendPost(ContentEditor contentEditor,
                          int boardId,
@@ -253,6 +257,11 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
         if (content.trim().isEmpty()) {
             content = " ";
         }
+        
+        // 转换表情格式：将 [字母:数字] 转换为 :字母数字:
+        // 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+        content = convertEmojiFormat(content);
+        
         String pollBlock = buildDiscoursePollBlock(title, pollOptions, pollChoices, pollVisible, pollShowVoters);
         if (!pollBlock.isEmpty()) {
             if (!content.isEmpty()) {
@@ -297,6 +306,28 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
                         disposable.add(d);
                     }
                 });
+    }
+
+    /**
+     * 转换表情格式
+     * 将 [字母:数字] 格式转换为 :字母数字: 格式（Discourse 标准表情格式）
+     * 特殊处理：将字母 'a'/'A' 转换为 's'（河畔BBS表情系统兼容性转换）
+     * 例如: [a:1168] -> :s1168:, [A:1168] -> :s1168:, [s:123] -> :s123:
+     */
+    private String convertEmojiFormat(String text) {
+        java.util.regex.Matcher matcher = EMOJI_PATTERN.matcher(text);
+        StringBuilder result = new StringBuilder();
+        
+        while (matcher.find()) {
+            String letter = matcher.group(1);
+            String number = matcher.group(2);
+            // Convert 'a' or 'A' to 's' for UESTC BBS emoji compatibility
+            String convertedLetter = "a".equalsIgnoreCase(letter) ? "s" : letter;
+            matcher.appendReplacement(result, ":" + convertedLetter + number + ":");
+        }
+        matcher.appendTail(result);
+        
+        return result.toString();
     }
 
     private String buildDiscoursePollBlock(String postTitle,
