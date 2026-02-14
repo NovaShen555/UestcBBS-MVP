@@ -64,6 +64,10 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
 
     PostModel postModel = new PostModel();
     DiscoursePostModel discoursePostModel = new DiscoursePostModel();
+    
+    // Pattern for emoji format conversion, compiled once for better performance
+    private static final java.util.regex.Pattern EMOJI_PATTERN = 
+        java.util.regex.Pattern.compile("\\[([a-zA-Z]+):(\\d+)\\]");
 
     public void sendPost(ContentEditor contentEditor,
                          int boardId,
@@ -311,9 +315,8 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
      * 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
      */
     private String convertEmojiFormat(String text) {
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[([a-zA-Z]+):(\\d+)\\]");
-        java.util.regex.Matcher matcher = pattern.matcher(text);
-        StringBuffer result = new StringBuffer();
+        java.util.regex.Matcher matcher = EMOJI_PATTERN.matcher(text);
+        StringBuilder result = new StringBuilder();
         
         while (matcher.find()) {
             String letter = matcher.group(1);
