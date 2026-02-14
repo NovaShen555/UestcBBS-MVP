@@ -311,8 +311,8 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
     /**
      * 转换表情格式
      * 将 [字母:数字] 格式转换为 :字母数字: 格式（Discourse 标准表情格式）
-     * 特殊处理：将字母 'a' 转换为 's'
-     * 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+     * 特殊处理：将字母 'a'/'A' 转换为 's'（河畔BBS表情系统兼容性转换）
+     * 例如: [a:1168] -> :s1168:, [A:1168] -> :s1168:, [s:123] -> :s123:
      */
     private String convertEmojiFormat(String text) {
         java.util.regex.Matcher matcher = EMOJI_PATTERN.matcher(text);
@@ -321,7 +321,8 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
         while (matcher.find()) {
             String letter = matcher.group(1);
             String number = matcher.group(2);
-            String convertedLetter = "a".equals(letter) ? "s" : letter;
+            // Convert 'a' or 'A' to 's' for UESTC BBS emoji compatibility
+            String convertedLetter = "a".equalsIgnoreCase(letter) ? "s" : letter;
             matcher.appendReplacement(result, ":" + convertedLetter + number + ":");
         }
         matcher.appendTail(result);
