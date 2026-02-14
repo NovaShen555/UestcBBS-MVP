@@ -253,6 +253,11 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
         if (content.trim().isEmpty()) {
             content = " ";
         }
+        
+        // 转换表情格式：将 [字母:数字] 转换为 :字母数字:
+        // 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+        content = convertEmojiFormat(content);
+        
         String pollBlock = buildDiscoursePollBlock(title, pollOptions, pollChoices, pollVisible, pollShowVoters);
         if (!pollBlock.isEmpty()) {
             if (!content.isEmpty()) {
@@ -297,6 +302,28 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
                         disposable.add(d);
                     }
                 });
+    }
+
+    /**
+     * 转换表情格式
+     * 将 [字母:数字] 格式转换为 :字母数字: 格式（Discourse 标准表情格式）
+     * 特殊处理：将字母 'a' 转换为 's'
+     * 例如: [a:1168] -> :s1168:, [s:123] -> :s123:
+     */
+    private String convertEmojiFormat(String text) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[([a-zA-Z]+):(\\d+)\\]");
+        java.util.regex.Matcher matcher = pattern.matcher(text);
+        StringBuffer result = new StringBuffer();
+        
+        while (matcher.find()) {
+            String letter = matcher.group(1);
+            String number = matcher.group(2);
+            String convertedLetter = "a".equals(letter) ? "s" : letter;
+            matcher.appendReplacement(result, ":" + convertedLetter + number + ":");
+        }
+        matcher.appendTail(result);
+        
+        return result.toString();
     }
 
     private String buildDiscoursePollBlock(String postTitle,
