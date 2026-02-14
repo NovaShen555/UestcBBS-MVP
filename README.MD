@@ -1,4 +1,7 @@
 # UestcBBS
+
+[![Android CI](https://github.com/NovaShen555/UestcBBS-MVP/actions/workflows/android-build.yml/badge.svg)](https://github.com/NovaShen555/UestcBBS-MVP/actions/workflows/android-build.yml)
+
 电子科技大学清水河畔安卓客户端<br/>
 
 ## <font color="red">停止维护</font>

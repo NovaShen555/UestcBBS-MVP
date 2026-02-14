@@ -1,0 +1,71 @@
+name: Promote to Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to promote (e.g., v1.1.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes (optional, will use existing if empty)'
+        required: false
+        type: string
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get Release Info
+      id: release_info
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Get the release by tag
+        RELEASE_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}")
+        
+        # Extract release ID and body
+        RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
+        RELEASE_BODY=$(echo "$RELEASE_DATA" | jq -r '.body')
+        
+        echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+        echo "release_body=$RELEASE_BODY" >> $GITHUB_OUTPUT
+        
+        if [ "$RELEASE_ID" == "null" ]; then
+          echo "Error: Release with tag ${{ inputs.tag }} not found"
+          exit 1
+        fi
+        
+    - name: Promote to Full Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Determine release notes
+        if [ -n "${{ inputs.release_notes }}" ]; then
+          NOTES='${{ inputs.release_notes }}'
+        else
+          NOTES='${{ steps.release_info.outputs.release_body }}'
+        fi
+        
+        # Use jq to properly escape JSON
+        PAYLOAD=$(jq -n \
+          --arg prerelease "false" \
+          --arg name "Release ${{ inputs.tag }}" \
+          --arg body "$NOTES" \
+          '{prerelease: ($prerelease == "true"), name: $name, body: $body}')
+        
+        # Update release to remove prerelease flag
+        curl -X PATCH \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.release_info.outputs.release_id }}" \
+          -d "$PAYLOAD"
+        
+        echo "Successfully promoted ${{ inputs.tag }} to full release"
