@@ -316,7 +316,7 @@ public class CreatePostPresenter extends BasePresenter<CreatePostView> {
      */
     private String convertEmojiFormat(String text) {
         java.util.regex.Matcher matcher = EMOJI_PATTERN.matcher(text);
-        StringBuilder result = new StringBuilder();
+        StringBuffer result = new StringBuffer();
         
         while (matcher.find()) {
             String letter = matcher.group(1);
